@@ -1,0 +1,104 @@
+body {
+	margin: 10px;
+    background-color: rgb(0, 0, 0);
+}
+
+.title
+{
+    font-size: 60px;
+    color:rgb(255, 255, 255);
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace; 
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 50px;
+}
+
+.container
+{
+    display: flex;
+    flex-direction: row; /* Lay out children horizontally */
+    align-items: flex-start; /* Align children to the top */
+    overflow-x: hidden; /* Hide horizontal overflow */
+    background-color: rgb(9, 0, 61); /* Just for visibility */
+    max-height: 100%;
+}
+
+.controls {
+    flex: 0 0 auto; /* Controls take up as much space as they need */
+    padding: 20px;
+    white-space: nowrap; /* Prevent text from wrapping */
+    background-color: lightgray;
+    max-height: 100%;
+  }
+
+.render-container {
+    flex: 1; /* Remaining space is devoted to the WebGL element */
+    position: relative;
+    display: flex; /* Use flexbox for inner elements */
+    justify-content: center; /* Center the canvas horizontally */
+    align-items: center; /* Center the canvas vertically */
+    background-color: lightblue; /* Just for visibility */
+    width: 100%;
+    height: 90vh; /* Occupy full viewport height */
+}
+
+#renderCanvas {
+    width: 100%; /* Fill the width of the parent */
+    height: 100%; /* Fill the height of the parent */
+}
+
+/* Common Demo UI Elements */
+/*.menu
+{ 
+    background-color: rgb(46, 46, 46);
+    color:rgb(255, 255, 255);
+    margin-left: 20px;
+    text-align: "left";
+    padding-top: 20px;
+}
+
+.submenu
+{ 
+    background-color: rgb(46, 46, 46);
+    color:rgb(255, 255, 255);
+    margin-left: 40px;
+    text-align: "left";
+    padding-top: 10px;
+}
+
+.submenu_label
+{ 
+    background-color: rgb(46, 46, 46);
+    color:rgb(255, 255, 255);
+    margin-left: 20px;
+    text-align: "left";
+    padding-top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace; 
+}
+
+.submenu_item
+{
+    margin-left: 40px;
+    padding-top: 2px; 
+    padding-bottom: 2px;
+}
+
+.shadertext
+{
+   width: 95%;
+   height: 100%;
+   min-height: 200px;
+   font-size: 32px;
+}
+
+.hidden {
+    display: none;
+}   
+*/
+
+
+
+

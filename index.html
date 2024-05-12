@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Probe Web Demo</title>
+		<link rel="stylesheet" type="text/css" href="styles.css">
+	</head>
+	<body>
+        <div id="title" class="title">
+			Probe Web Demo
+		</div>
+		<div class="container">
+			<div class="controls">
+				<button>Button 1</button>
+				<button>Button 2</button>
+				<button>Button 3</button>
+			</div>
+			<div class="render-container" id="renderCanvasContainer">
+			</div>
+		  </div>
+        <!-- div class="container" >
+            
+
+			<button class="overlay-button">Overlay Button</button>
+        </div -->
+        <script type="importmap">
+			{
+			  "imports": {
+				"three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
+			  }
+			}
+		  </script>
+		</script>
+		<script type="module" src="./js/main.js"></script>
+    </body>    
+</html>
