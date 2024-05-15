@@ -4,11 +4,9 @@ import { hudScene, hudCamera,
 		initHudScene, loadFont,
 		raycastHUDElement, renderHUDView} from './hud.js';
 
-import { initScene, renderScene } from './scene.js'
+import { ProbeScene } from './scene.js'
 
-import { initViews, getViews, 
-		getActiveView, getHoveredView, 
-		setActiveView, updateViewCameras } from './views.js';
+import { ViewManager } from './views.js';
 
 
 const renderer = new THREE.WebGLRenderer();
@@ -18,6 +16,18 @@ const pointer = new THREE.Vector2();
 
 // Create variables for representing the renderer window width/height
 let windowWidth, windowHeight;
+
+// Create variable for the view manager
+let viewManager;
+
+// Create variable for currently hovered view
+let hoveredViewIndex = -1;
+
+// Create variable for perspective camera
+let perspCamera;
+
+// Create variable for the scene
+let probeScene;
 
 const renderContainerElement = document.getElementById("renderCanvasContainer");
 renderer.domElement.id = "renderCanvas";
@@ -29,9 +39,17 @@ function postLoad() {
 }
 
 function init() {
-	initScene(renderer.domElement);
-	initViews(renderer.domElement);
-    initHudScene();
+	viewManager = new ViewManager(renderer.domElement);
+
+	const perspViewIndex = viewManager.getViewByName("Perspective View");
+
+	perspCamera = viewManager.getViewCamera(perspViewIndex);
+
+	probeScene = new ProbeScene(viewManager.getViewByName("Real World View"),
+								viewManager, 
+								renderer.domElement);
+
+    initHudScene(viewManager);
 
 	renderer.setSize(200, 150, false);
 
@@ -45,15 +63,12 @@ function updateSize() {
 	windowWidth = renderContainerElement.clientWidth;
 	windowHeight = renderContainerElement.clientHeight;
 
-	console.log("CW:", windowWidth);
-	console.log("CH:", windowHeight);
-
 	renderer.setSize(windowWidth, windowHeight);
 }
 
 function onWindowResize() {
 	updateSize();
-	updateViewCameras(windowWidth, windowHeight);
+	viewManager.updateViewCameras(windowWidth, windowHeight);
 }
 
 function calculateNDCMousePosition(event) {
@@ -69,8 +84,6 @@ function calculateNDCMousePosition(event) {
 	return new THREE.Vector2(mouseX, mouseY);
 }
 
-
-
 // Modified from https://threejs.org/docs/index.html?q=ray#api/en/core/Raycaster
 function onPointerMove(event) {
 	// Get the NDC mouse coordinates
@@ -79,6 +92,21 @@ function onPointerMove(event) {
 	// Update current mouse pointer coordinates
 	pointer.x = mouseCoords.x;
 	pointer.y = mouseCoords.y;
+
+	// Get new hovered view
+	const newHoveredViewIndex = viewManager.getHoveredView(pointer);
+
+	// Update camera controls if hovered view has changed
+	if(hoveredViewIndex != newHoveredViewIndex) {
+		// Disable camera controls on the old view
+		viewManager.setViewControlsEnabled(hoveredViewIndex, false);
+		
+		// Enable camera controls on the new view
+		viewManager.setViewControlsEnabled(newHoveredViewIndex, true);
+
+		// Update the currently hovered view to the new hovered view
+		hoveredViewIndex = newHoveredViewIndex;
+	}
 }
 
 function onMouseDown(event) {
@@ -86,13 +114,14 @@ function onMouseDown(event) {
 	const mouseCoords = calculateNDCMousePosition(event);
 
 	// Get the currently hovered view
-	const hoveredView = getHoveredView(mouseCoords);
+	const hoveredView = viewManager.getHoveredView(mouseCoords);
 
 	if(hoveredView != -1) {
 		const intersects = raycastHUDElement(mouseCoords, hoveredView);
 
 		if(intersects != null) {
-			setActiveView(getActiveView() == hoveredView ? -1 : hoveredView);
+			const activeView = viewManager.getActiveView();
+			viewManager.setActiveView(activeView == hoveredView ? -1 : hoveredView);
 		}
 	}
 }
@@ -130,7 +159,7 @@ function renderView(view, viewIndex, fullscreen) {
 	renderer.autoClear = true;
 
 	// Render the main scene
-    renderScene(renderer, camera);
+    probeScene.renderScene(renderer, camera, view.imagespace, false);
 
 	// Turn off autoclear (otherwise the scene render would be overwritten)
 	renderer.autoClear = false;
@@ -145,19 +174,20 @@ function renderView(view, viewIndex, fullscreen) {
 // Modified from https://threejs.org/examples/webgl_multiple_views
 function render() {
 	updateSize();
-	updateViewCameras(windowWidth, windowHeight);
+	viewManager.updateViewCameras(windowWidth, windowHeight);
 
-	var views = getViews();
+	var views = viewManager.getViews();
+	var activeView = viewManager.getActiveView();
 
 	// If active view is not set, render all four views.
-	if(getActiveView() == -1) {
+	if(activeView == -1) {
 		for (let ii = 0; ii < views.length; ++ii) {
 			renderView(views[ii], ii, false);
 		}
 	}
 	// Otherwise, render the active view.
 	else {
-		renderView(views[getActiveView()], getActiveView(), true);
+		renderView(views[activeView], activeView, true);
 	}
 
 }

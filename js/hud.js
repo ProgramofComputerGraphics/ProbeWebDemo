@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 
-import { getViews, normalizePointerToView } from './views.js';
+import { ViewManager } from './views.js';
 
 // Create a scene for the HUD
 export const hudScene = new THREE.Scene();
@@ -26,11 +26,17 @@ var viewHUDFullscreenButtons = [];
 var font;
 
 
+// Create viewManager variable
+var viewManager;
+
+
 // Create a raycaster for selecting elements of the HUD
 const raycaster = new THREE.Raycaster();
 
 
-export function initHudScene(){
+export function initHudScene(viewManagerArg){
+    viewManager = viewManagerArg;
+    
     const button_width = 0.06;
     const button_height = 0.05;
     
@@ -43,7 +49,7 @@ export function initHudScene(){
     const hudFullscreenButtonGeometry = new THREE.PlaneGeometry(button_width, button_height);
 
     // Determine the number of views (one HUD is needed per view)
-    var views = getViews();
+    var views = viewManagerArg.getViews();
     const numViews = views.length;
 
     // Create a Fullscreen Text geometry
@@ -134,7 +140,7 @@ export function loadFont(postLoad) {
 // TODO: Extend flexibility to more than just the fullscreen buttons
 export function raycastHUDElement(pointer, viewIndex) {
     // Calculate the pointer position normalized to the current view
-    const viewNormalizedPointer = normalizePointerToView(pointer, viewIndex);
+    const viewNormalizedPointer = viewManager.normalizePointerToView(pointer, viewIndex);
     
     // Update the mouse pointer ray with the camera and adjusted pointer position
 	raycaster.setFromCamera(viewNormalizedPointer, hudCamera);

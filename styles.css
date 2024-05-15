@@ -21,6 +21,7 @@ body {
     align-items: flex-start; /* Align children to the top */
     overflow-x: hidden; /* Hide horizontal overflow */
     background-color: rgb(9, 0, 61); /* Just for visibility */
+    width: 100%;
     max-height: 100%;
 }
 
@@ -33,13 +34,12 @@ body {
   }
 
 .render-container {
-    flex: 1; /* Remaining space is devoted to the WebGL element */
+    flex: 1 1 auto; /* Remaining space is devoted to the WebGL element */
     position: relative;
-    display: flex; /* Use flexbox for inner elements */
     justify-content: center; /* Center the canvas horizontally */
     align-items: center; /* Center the canvas vertically */
     background-color: lightblue; /* Just for visibility */
-    width: 100%;
+    min-width: 0;
     height: 90vh; /* Occupy full viewport height */
 }
 

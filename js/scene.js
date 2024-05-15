@@ -1,158 +1,214 @@
 import * as THREE from 'three';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
-// The scene is implemented as two separate scenes:
-//  - One is the undistorted "real world" scene, it contains the truncated pyramid frustum
-//  - One is the distorted "imagespace" scene, it contains the half-cube NDC camera extents
-// 
-// When rendering the scene, the user species whether they want the camera distortion to be
-// applied. If not, the "real world" scene is rendered. If not, the "imagespace" scene is
-// rendered.
+import { flipZ } from './math_utils.js';
+import { ViewManager } from './views.js';
 
-// The real-world scene variable
-var realScene;
-var imageSpaceScene;
-
-var object;
-var material;
-
-var renderDomElement;
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 const loader = new OBJLoader();
 
-export function initScene(domElement) {
-    // Initialize scene
-    initRealWorldScene();
-    initImagespaceScene();
+export class ProbeScene {
+    constructor(transformCntrlsView, viewManagerArg, domElement) {
+        // Set global variables    
+        this.material = new THREE.MeshStandardMaterial({color : 0xffffff});
 
-    makeDefaultCube();
+        this.transformControlsView = transformCntrlsView;
+        this.viewManager = viewManagerArg;
+        this.renderDomElement = domElement;
 
-    material = new THREE.MeshBasicMaterial({color : 0xe00000});
+        this.object = null;
+        this.gumball = null;
 
-    renderDomElement = domElement;
-}
+        // The scene is implemented as two separate scenes:
+        //  - One is the undistorted "real world" scene, it contains the truncated pyramid frustum
+        //  - One is the distorted "imagespace" scene, it contains the half-cube NDC camera extents
+        // 
+        // When rendering the scene, the user species whether they want the camera distortion to be
+        // applied. If not, the "real world" scene is rendered. If not, the "imagespace" scene is
+        // rendered.
 
-function initRealWorldScene() {
-    realScene = new THREE.Scene();
+        // The real-world scene variable
+        this.realScene = null;
+        // The image-space scene variable
+        this.imageSpaceScene = null;
+
+        // Initialize the two scenes
+        this.#initRealWorldScene();
+        this.#initImagespaceScene();
+
+        this.#makeDefaultCube();
+
+    }
+
+    #initRealWorldScene() {
+        this.realScene = new THREE.Scene();
+        
+        // TODO: Add Pyramid Frustum Objects
     
-    // TODO: Add Pyramid Frustum Objects
+        initSceneLights(this.realScene);
+    }
 
-    initSceneLights(realScene);
-}
+    #initImagespaceScene() {
+        this.imageSpaceScene = new THREE.Scene();
+    
+        // TODO: Add Half-Cube Camera Extents Objects 
+    
+       initSceneLights(this.imageSpaceScene);
+    }
 
-function initImagespaceScene() {
-    imageSpaceScene = new THREE.Scene();
+    #changeSceneObject(newObject) {
+        if(this.object != null) {
+            this.object.clear();
+            this.realScene.remove(this.object);
+        }
+    
+        this.object = newObject;
+        this.realScene.add(this.object);
+    }
 
-    // TODO: Add Half-Cube Camera Extents Objects 
+    #makeDefaultCube() {
+        this.#changeSceneObject(new THREE.Mesh(defaultGeo, this.material));
+        this.#attachTransformControlsToObject();
+    
+        this.object.position.z = 5;
+    }
 
-    initSceneLights(imageSpaceScene);
+    #attachTransformControlsToObject() { 
+        if(this.gumball != null) {
+            this.realScene.remove(this.gumball)
+            this.gumball.dispose();
+        }
+    
+        const camera = this.viewManager.getViewCamera(this.transformControlsView);
+        
+        this.gumball = new TransformControls(camera, 
+                                        this.renderDomElement);
+    
+        this.gumball.addEventListener('dragging-changed', function(event){
+            this.viewManager.setViewControlsEnabled(this.transformControlsView, 
+                                                    !event.value);
+    
+            console.log("Controls Set To:", !event.value);
+        });
+    
+        this.gumball.attach(this.object);
+
+        this.realScene.add(this.gumball);
+    }
+    
+    #addLoadedObjectToScene(loadedObject) {
+        // Swap object to the newly loaded object
+        this.changeSceneObject(loadedObject);
+        this.attachTransformControlsToObject();
+    
+        // Change materials on loaded object to the scene material
+        this.object.children.forEach(function(mesh) {
+            try {
+                mesh.material = this.material;
+            }
+            catch(error)
+            {
+                console.log("Non-mesh element loaded from OBJ; scene material cannot be applied!");
+            }
+        });
+    }
+
+    getCurrentObject() {
+        return object;
+    }
+
+    loadObjectAtPath(objectPath)
+    {
+        // Immediately fail for malformed paths
+        if(objectPath != null && objectPath != "")
+        {  
+            console.log("Object Loading Failed: Null or Empty Path Provided!");
+            return;
+        }
+
+        loader.load(
+            objectPath,
+            this.#addLoadedObjectToScene,
+            // called when loading is in progresses
+            function(xhr) {
+
+                console.log((xhr.loaded / xhr.total * 100) + "% loaded");
+
+            },
+            // called when loading has errors
+            function(error) {
+
+                console.log("Object Loading Failed:", error);
+
+                this.#makeDefaultCube();
+            }
+        );  
+    }
+
+    renderScene(renderer, camera, showFrustum, disortionCamera)
+    {
+        // If rendering the scene without distortion, simply render and return 
+        if(!disortionCamera) {
+            renderer.render(this.realScene, camera);
+            return;
+        }
+
+        // If rendering the scene with distortion, need to distort the geometry
+        // using the scene's camera matrix
+        const projMatrix = disortionCamera.projectionMatrix;
+
+        const distortedObj = new THREE.Object3D();
+        distortedObj.copy(this.object, true);
+        distortedObj.applyMatrix4(projMatrix);
+        distortedObj.applyMatrix4(flipZ);
+
+        this.imageSpaceScene.add(distortedObj);
+        renderer.render(this.imageSpaceScene, camera);
+        this.imageSpaceScene.remove(distortedObj);
+    }
 }
 
 function initSceneLights(scene) {
 
-    // Create First Downwards-Facing Directional Light
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.5);
-    dirLight1.position.x = -1;
-    dirLight1.position.y = 1;
-    dirLight1.position.z = 1;
+    // Create First Front-Side Directional Light
+    const dirLightFront1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLightFront1.position.x = 1;
+    dirLightFront1.position.y = 1;
+    dirLightFront1.position.z = -3;
 
-    // Create Second Downwards-Facing Directional Light
-    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-    dirLight2.position.x = 1;
-    dirLight2.position.y = 1;
-    dirLight2.position.z = -1;
+     // Create Second Front-Side Directional Light
+     const dirLightFront2 = new THREE.DirectionalLight(0xffffff, 1.2);
+     dirLightFront2.position.x = -1;
+     dirLightFront2.position.y = 1;
+     dirLightFront2.position.z = -3;
 
-    // Create Upwards-Facing Directional Light
-    const dirLight3 = new THREE.DirectionalLight(0xffffff, 0.1);
-    dirLight3.position.x = 0;
-    dirLight3.position.y = -1;
-    dirLight3.position.z = 0;
+    // Create First Back-Side Directional Light
+    const dirLightBack1 = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLightBack1.position.x = 2;
+    dirLightBack1.position.y = 1;
+    dirLightBack1.position.z = 1;
+
+    // Create Second Back-Side Directional Light
+    const dirLightBack2 = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLightBack2.position.x = -2;
+    dirLightBack2.position.y = 1;
+    dirLightBack2.position.z = 1;
+
+    // Create Underneath Directional Light
+    const dirLightUnder = new THREE.DirectionalLight(0xffffff, 0.2);
+    dirLightUnder.position.x = 0;
+    dirLightUnder.position.y = -1;
+    dirLightUnder.position.z = 0;
 
     // Add Directional Lights to scene
-    scene.add(dirLight1);
-    scene.add(dirLight2);
-    scene.add(dirLight3);
-}
+    scene.add(dirLightFront1);
+    scene.add(dirLightFront2);
 
-function changeSceneObject(newObject) {
-    realScene.remove(object);
-    imageSpaceScene.remove(object);
-
-    object = newObject;
+    scene.add(dirLightBack1);
+    scene.add(dirLightBack2);
     
-    imageSpaceScene.add(object);
-    realScene.add(object);
-}
-
-function makeDefaultCube() {
-    changeSceneObject(new THREE.Mesh(defaultGeo, material));
-
-    object.position.z = 5;
-}
-
-function addLoadedObjectToScene(loadedObject) {
-    // Swap object to the newly loaded object
-    changeSceneObject(loadedObject);
-
-    // Change materials on loaded object to the scene material
-    object.children.forEach(function(mesh) {
-        try {
-            mesh.material = material;
-        }
-        catch(error)
-        {
-            console.log("Non-mesh element loaded from OBJ; scene material cannot be applied!");
-        }
-    });
-}
-
-export function loadObjectAtPath(objectPath)
-{
-    // Immediately fail for malformed paths
-    if(objectPath != null && objectPath != "")
-    {  
-        console.log("Object Loading Failed: Null or Empty Path Provided!");
-        return;
-    }
-
-    loader.load(
-        objectPath,
-        addLoadedObjectToScene,
-        // called when loading is in progresses
-        function(xhr) {
-
-            console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-
-        },
-        // called when loading has errors
-        function(error) {
-
-            console.log("Object Loading Failed:", error);
-
-            makeDefaultCube();
-        }
-    );
-    
-}
-
-export function renderScene(renderer, camera, applyPerspectiveDistortion, disortionCamera)
-{
-    // If rendering the scene without distortion, simply render and return 
-    if(!applyPerspectiveDistortion) {
-        renderer.render(realScene, camera);
-        // console.log(realScene, camera);
-        return;
-    }
-
-    // If rendering the scene with distortion, need to distort the geometry, render, and then undistort the geometry
-    const projMatrix = disortionCamera.projectionMatrix;
-    const inverseProjMatrix = disortionCamera.projectionMatrixInverse;
-
-    // object.applyMatrix4(projMatrix);
-
-    renderer.render(imageSpaceScene, camera);
-
-    // object.applyMatrix4(inverseProjMatrix);
+    scene.add(dirLightUnder);
 }
