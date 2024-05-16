@@ -25,25 +25,74 @@ body {
     max-height: 100%;
 }
 
-.controls {
+.controls-section {
     flex: 0 0 auto; /* Controls take up as much space as they need */
     padding: 20px;
     white-space: nowrap; /* Prevent text from wrapping */
     background-color: lightgray;
+    min-width: 15%;
     max-height: 100%;
   }
 
-.render-container {
+.render-section {
     flex: 1 1 auto; /* Remaining space is devoted to the WebGL element */
     position: relative;
     justify-content: center; /* Center the canvas horizontally */
     align-items: center; /* Center the canvas vertically */
-    background-color: lightblue; /* Just for visibility */
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    padding-left: 40px; 
     min-width: 0;
     height: 90vh; /* Occupy full viewport height */
 }
 
-#renderCanvas {
+.overall-views-container {
+    display: grid; /* Remaining space is devoted to the WebGL element */
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px; /* Adjust the gap between the grid items as needed */
+    justify-content: center; /* Center the canvas horizontally */
+    align-items: center; /* Center the canvas vertically */
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    min-width: 0;
+    height: 90vh; /* Occupy full viewport height */
+}
+
+.individual-view-container {
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.view-header{
+    flex: 0 0 auto;
+    display: flex;
+    padding: 10px;
+    background-color: rgb(0, 0, 0);
+    justify-content: space-between;
+}
+
+.header-label{
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace; 
+    font-size: 32px;
+    color:rgb(192, 192, 192);
+    text-align: center;
+}
+
+.header-button {
+    margin-left: auto;
+}
+
+.view-render-area{
+    flex: 1 1 auto;
+    border: solid 2px rgb(255, 255, 255);
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+}
+
+.render-canvas {
     width: 100%; /* Fill the width of the parent */
     height: 100%; /* Fill the height of the parent */
 }

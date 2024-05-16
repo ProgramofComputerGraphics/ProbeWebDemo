@@ -1,9 +1,5 @@
 import * as THREE from 'three';
 
-import { hudScene, hudCamera, 
-		initHudScene, loadFont,
-		raycastHUDElement, renderHUDView} from './hud.js';
-
 import { ProbeScene } from './scene.js'
 
 import { ViewManager } from './views.js';
@@ -23,52 +19,39 @@ let viewManager;
 // Create variable for currently hovered view
 let hoveredViewIndex = -1;
 
-// Create variable for perspective camera
-let perspCamera;
-
 // Create variable for the scene
 let probeScene;
 
-const renderContainerElement = document.getElementById("renderCanvasContainer");
-renderer.domElement.id = "renderCanvas";
-renderContainerElement.appendChild(renderer.domElement);
-
-function postLoad() {
-	init();
-	animate();
-}
 
 function init() {
 	viewManager = new ViewManager(renderer.domElement);
 
-	const perspViewIndex = viewManager.getViewByName("Perspective View");
-
-	perspCamera = viewManager.getViewCamera(perspViewIndex);
-
-	probeScene = new ProbeScene(viewManager.getViewByName("Real World View"),
+	probeScene = new ProbeScene(viewManager.getViewByName("realView"),
 								viewManager, 
 								renderer.domElement);
 
-    initHudScene(viewManager);
-
 	renderer.setSize(200, 150, false);
 
-	renderContainerElement.addEventListener('resize', onWindowResize);
-	renderer.domElement.addEventListener('mousedown', onMouseDown);
-	renderer.domElement.addEventListener('pointermove', onPointerMove);
+	window.addEventListener('resize', onWindowResize);
+	window.addEventListener('mousedown', onMouseDown);
+	window.addEventListener('pointermove', onPointerMove);
 }
 
-// Modified from https://threejs.org/examples/webgl_multiple_views
-function updateSize() {
-	windowWidth = renderContainerElement.clientWidth;
-	windowHeight = renderContainerElement.clientHeight;
-
-	renderer.setSize(windowWidth, windowHeight);
-}
-
-function onWindowResize() {
-	updateSize();
-	viewManager.updateViewCameras(windowWidth, windowHeight);
+window.onFullscreenButtonPressed = function(viewName) {
+	const activeView = viewManager.getActiveView();
+	const button = document.getElementById(viewName + "Button");
+	if(activeView != -1) {
+		button.textContent = "Fullscreen";
+		viewManager.setActiveView(-1);
+	}
+	else {
+		if(!viewManager.setActiveView(viewManager.getViewByName(viewName))) {
+			console.error("Failed to set active view with name", viewName);
+		}
+		else {
+			button.textContent = "Back to Four Views";
+		}
+	}
 }
 
 function calculateNDCMousePosition(event) {
@@ -82,6 +65,10 @@ function calculateNDCMousePosition(event) {
 	var mouseY = -(event.clientY - rect.top) / rect.height * 2 + 1;
 
 	return new THREE.Vector2(mouseX, mouseY);
+}
+
+function onWindowResize() {
+	viewManager.updateViewSizes();
 }
 
 // Modified from https://threejs.org/docs/index.html?q=ray#api/en/core/Raycaster
@@ -126,68 +113,24 @@ function onMouseDown(event) {
 	}
 }
 
-function renderView(view, viewIndex, fullscreen) {
-    const camera = view.camera;
-    
-	var left, bottom, width, height;
-
-    if(!fullscreen) {
-		left = Math.floor(windowWidth * view.left);
-        bottom = Math.floor(windowHeight * view.bottom);
-        width = Math.floor(windowWidth * view.width);
-        height = Math.floor(windowHeight * view.height);
-		
-		renderer.setScissorTest(true);
-        renderer.setScissor(left, bottom, width, height);
-    }
-    else {
-		left = 0;
-		bottom = 0;
-		width = windowWidth;
-		height = windowHeight;
-
-		renderer.setScissorTest(false);
-    }
-    
-	renderer.setViewport(left, bottom, width, height);
-	renderer.setClearColor(view.background);
-
-	camera.aspect = windowWidth / windowHeight;
-    camera.updateProjectionMatrix();
-    
-	// Turn on autoclear
-	renderer.autoClear = true;
-
-	// Render the main scene
-    probeScene.renderScene(renderer, camera, view.imagespace, false);
-
-	// Turn off autoclear (otherwise the scene render would be overwritten)
-	renderer.autoClear = false;
-
-	// Raycast to highlight full screen buttons if hovered
-	raycastHUDElement(pointer, viewIndex);
-
-	// Render the HUD elements
-	renderHUDView(renderer, pointer, viewIndex);
-}
-
 // Modified from https://threejs.org/examples/webgl_multiple_views
 function render() {
-	updateSize();
-	viewManager.updateViewCameras(windowWidth, windowHeight);
-
 	var views = viewManager.getViews();
 	var activeView = viewManager.getActiveView();
+
+	viewManager.updateViewSizes();
 
 	// If active view is not set, render all four views.
 	if(activeView == -1) {
 		for (let ii = 0; ii < views.length; ++ii) {
-			renderView(views[ii], ii, false);
+			const view = views[ii];
+			probeScene.renderScene(view.renderer, view.camera, true, view.imagespace);
 		}
 	}
 	// Otherwise, render the active view.
 	else {
-		renderView(views[activeView], activeView, true);
+		const view = views[activeView];
+		probeScene.renderScene(view.renderer, view.camera, true, view.imagespace);
 	}
 
 }
@@ -200,4 +143,5 @@ function animate() {
 
 }
 
-loadFont(postLoad);
+init();
+animate();

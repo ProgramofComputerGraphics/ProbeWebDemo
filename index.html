@@ -10,12 +10,49 @@
 			Probe Web Demo
 		</div>
 		<div class="container">
-			<div class="controls">
+			<div class="controls-section">
 				<button>Button 1</button>
 				<button>Button 2</button>
 				<button>Button 3</button>
 			</div>
-			<div class="render-container" id="renderCanvasContainer">
+			<div class="render-section">
+				<div class="overall-views-container" id="viewsContainer">
+					<!-- Real World View Elements -->
+					<div class="individual-view-container" id="realViewContainer">	
+						<div class="view-header"> 
+							<label class="header-label"> Real View </label>
+							<button class="header_button" id="realViewButton" onclick="onFullscreenButtonPressed('realView')"> Fullscreen </button>
+						</div>
+						<div class="view-render-area" id="realView"></div>
+					</div>
+	
+					<!-- Perspective View Elements -->
+					<div class="individual-view-container" id="perspViewContainer">	
+						<div class="view-header"> 
+							<label class="header-label"> Perspective View </label>
+							<button class="header_button" id="perspViewButton" onclick="onFullscreenButtonPressed('perspView')"> Fullscreen </button>
+						</div>
+						<div class="view-render-area" id="perspView"></div>
+					</div>
+	
+					<!-- Orthographic View Elements -->
+					<div class="individual-view-container" id="orthoViewContainer">	
+						<div class="view-header">
+							<label class="header-label"> Orthographic View </label>
+							<button class="header_button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')"> Fullscreen </button>
+						</div>
+						<div class="view-render-area" id="orthoView"></div>
+					</div>
+	
+					<!-- Imagespace View Element -->
+					<div class="individual-view-container" id="imageViewContainer">	
+						<div class="view-header"> 
+							<label class="header-label"> Imagespace View </label>
+							<button class="header_button" id="imageViewButton" onclick="onFullscreenButtonPressed('imageView')"> Fullscreen </button>
+						</div>
+						<div class="view-render-area" id="imageView"></div>
+					</div>
+				</div>
 			</div>
 		  </div>
         <!-- div class="container" >
