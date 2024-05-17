@@ -16,6 +16,8 @@
 				</div>
 				<hr>
 				<div class="menu" id="controlsMenu">
+					
+					<!-- Frustum Controls -->
 					<div class="submenu-label" id="frustumControlsLabel">
 						Frustum
 					</div>
@@ -24,6 +26,25 @@
 							<label for="fovSlider"> Field of View (FOV): </label>
 							<input type="number" id="fovEntry" min="0.1" max="179.9" value="45" title="FOV (in degrees)" class="standard-number">
 							<input type="range" id="fovSlider" min="1" max="179" step="1" value="45" class="standard-slider">
+						</div>
+					</div>
+
+					<!-- Shading Controls -->
+					<div class="submenu-label" id="frustumControlsLabel">
+						Shading
+					</div>
+					<div class="submenu" id="fovControls">
+						<div class="submenu-item">
+							<label for="shadingDropdown"> Shading Mode: </label>
+							<select id="shadingDropdown">
+								<option value="wire">Wireframe </option>
+								<option value="flat" selected>Flat Shading </option>
+								<option value="smooth">Smooth Shading </option>
+							</select>
+						</div>
+						<div class="submenu-item">
+							<label for="colorpickObjColor">Object Color:</label>
+							<input type='color' id="colorpickObjColor"  class="colorpicker" value="#FFFFFF">
 						</div>
 					</div>
 				</div>

@@ -92,7 +92,6 @@ body {
 .view-render-area{
     flex: 1 1 auto;
     border: solid 2px rgb(255, 255, 255);
-    background-color: rgb(0, 0, 0); /* Just for visibility */
 }
 
 .render-canvas {

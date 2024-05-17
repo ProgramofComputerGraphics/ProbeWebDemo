@@ -19,6 +19,7 @@ export class ProbeScene {
     
     #object;
     #objMaterial;
+    #objShadingMode
 
     #frustumFOV;
     #frustumNear;
@@ -33,6 +34,7 @@ export class ProbeScene {
         this.#object = null;
         this.#objMaterial = new THREE.MeshStandardMaterial({color : 0xffffff,
                                                             flatShading : true});
+        this.#objShadingMode = "flat";
 
         this.#frustumFOV = 45;
         this.#frustumNear = 1;
@@ -219,6 +221,37 @@ export class ProbeScene {
         this.#frustumFar = far;
     }
 
+    setShadingMode(mode) {    
+        switch(mode) {
+            case "wire":
+                this.#objMaterial.wireframe = true;
+                this.#objMaterial.flatShading = false;
+                this.#objMaterial.emissive = this.#objMaterial.color;
+                break;
+            case "flat":
+                this.#objMaterial.wireframe = false;
+                this.#objMaterial.flatShading = true;
+                this.#objMaterial.emissive = new THREE.Color(0x000000);
+                break;
+            case "smooth":
+                this.#objMaterial.wireframe = false;
+                this.#objMaterial.flatShading = false;
+                this.#objMaterial.emissive = new THREE.Color(0x000000);
+                break;
+        }
+
+        this.#objShadingMode = mode;
+        this.#objMaterial.needsUpdate = true;
+    }
+
+    setObjectColor(color) {
+        this.#objMaterial.color = new THREE.Color(color);
+        if(this.#objShadingMode == "wire") {
+            this.#objMaterial.emissive = new THREE.Color(color);
+        }
+        this.#objMaterial.needsUpdate = true;
+    }
+
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
     #applyFrustumDistortionToObject(obj, camera) {
@@ -318,33 +351,22 @@ function initSceneLights(scene) {
 
     // Create First Front-Side Directional Light
     const dirLightFront1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLightFront1.position.x = 1;
-    dirLightFront1.position.y = 1;
-    dirLightFront1.position.z = -3;
+    dirLightFront1.position.set(1,1,-3);
 
      // Create Second Front-Side Directional Light
      const dirLightFront2 = new THREE.DirectionalLight(0xffffff, 1.2);
-     dirLightFront2.position.x = -1;
-     dirLightFront2.position.y = 1;
-     dirLightFront2.position.z = -3;
+     dirLightFront2.position.set(-1,1,-3);
 
     // Create First Back-Side Directional Light
     const dirLightBack1 = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLightBack1.position.x = 2;
-    dirLightBack1.position.y = 1;
-    dirLightBack1.position.z = 1;
+    dirLightBack1.position.set(2,1,1);
 
     // Create Second Back-Side Directional Light
     const dirLightBack2 = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLightBack2.position.x = -2;
-    dirLightBack2.position.y = 1;
-    dirLightBack2.position.z = 1;
+    dirLightBack2.position.set(-2,1,1);
 
-    // Create Underneath Directional Light
-    const dirLightUnder = new THREE.DirectionalLight(0xffffff, 0.2);
-    dirLightUnder.position.x = 0;
-    dirLightUnder.position.y = -1;
-    dirLightUnder.position.z = 0;
+    // Create Ambient Light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light
 
     // Add Directional Lights to scene
     scene.add(dirLightFront1);
@@ -352,8 +374,8 @@ function initSceneLights(scene) {
 
     scene.add(dirLightBack1);
     scene.add(dirLightBack2);
-    
-    scene.add(dirLightUnder);
+
+    scene.add(ambientLight);
 }
 
 

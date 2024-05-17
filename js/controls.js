@@ -15,4 +15,18 @@ export function initControls(probeScene) {
         probeScene.setFOV(fovSlider.value); 
         fovNumber.value = fovSlider.value;
     });
+
+    // Shading Behavior
+    const shadingDropdown = document.getElementById("shadingDropdown");
+    
+    shadingDropdown.addEventListener("change", () => { 
+        probeScene.setShadingMode(shadingDropdown.value); 
+    });
+
+    // Shading Behavior
+    const shadingColor = document.getElementById("colorpickObjColor");
+    
+    shadingColor.addEventListener("input", (event) => { 
+        probeScene.setObjectColor(event.target.value); 
+    });
 }

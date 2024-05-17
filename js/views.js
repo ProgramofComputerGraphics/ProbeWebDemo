@@ -2,6 +2,8 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+import { generateImageFrustumClippingPlanes } from './frustum.js';
+
 const orthoPadding = 0.25;
 
 export class ViewManager {
@@ -18,7 +20,7 @@ export class ViewManager {
                 name: "realView",
                 containerID: "realViewContainer",
                 // background: new THREE.Color().setRGB( 0.5, 0.5, 0.7, THREE.SRGBColorSpace ),
-                eye: [ -10, 10, 0 ],
+                eye: [ -12, 10, 0 ],
                 up: [ 0, 1, 0 ],
                 fov: 30,
                 controllable: true,
@@ -123,6 +125,11 @@ export class ViewManager {
 
         // Add the DOM element of the view's renderer to the container div as a child
         viewContainer.appendChild(view.renderer.domElement);
+
+        // Add Clipping Planes for Imagespace Renderer
+        if(view.imagespace) {
+            view.renderer.clippingPlanes = generateImageFrustumClippingPlanes();
+        }
     }
 
     #initCameraControls(view) {

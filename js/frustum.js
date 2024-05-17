@@ -134,3 +134,30 @@ export function generateImageFrustumFarLines() {
     // Create frustum line geometry
     return new THREE.LineSegments(frustumGeo, farPlaneLineMaterial); 
 }
+
+export function generateImageFrustumClippingPlanes() {
+    const epsilon = 0.001;
+    const onePlusEpsilon = 1 + epsilon;
+    
+    const clippingPlanes = [];
+
+    // Left-side plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), onePlusEpsilon));
+    
+    // Right-side plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), onePlusEpsilon));
+
+    // Bottom-side plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), onePlusEpsilon));
+
+    // Top-side plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), onePlusEpsilon));
+
+    // Near plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 0, 1), epsilon));
+
+    // Far plane
+    clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), onePlusEpsilon));
+
+    return clippingPlanes;
+}
