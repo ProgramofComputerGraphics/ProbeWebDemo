@@ -2,9 +2,10 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+const orthoPadding = 0.25;
 
 export class ViewManager {
-    constructor(renderDomElement) {
+    constructor() {
         
         // Initializes the four views:
         //  - Real World
@@ -80,7 +81,11 @@ export class ViewManager {
         // Define the camera based on the specified parameters (fov is set to "ortho"
         // for orthographic cameras). 
         if(view.fov == "ortho"){
-            camera = new THREE.OrthographicCamera(-1, 11, 6, -6);
+            const estimatedAspect = window.innerWidth * 0.85 / window.innerHeight;
+            const startFar = 10; // TODO Remove this magic number
+            const hDist = orthoPadding + startFar / 2;
+            view.orthoMode = "elevation";
+            camera = new THREE.OrthographicCamera(-hDist, hDist, hDist / estimatedAspect, -hDist / estimatedAspect);
             camera.up.fromArray(view.up);
         }
         else{
@@ -121,22 +126,22 @@ export class ViewManager {
     }
 
     #initCameraControls(view) {
-        const cam_controls = new OrbitControls(view.camera, view.renderer.domElement);
+        const cameraControls = new OrbitControls(view.camera, view.renderer.domElement);
         
         // Define the target for the camera
         if(view.imagespace) {
-            cam_controls.target = new THREE.Vector3(0,0,0.5);
+            cameraControls.target = new THREE.Vector3(0,0,0.5);
         }
         else {
-            cam_controls.target = new THREE.Vector3(0,0,5);
+            cameraControls.target = new THREE.Vector3(0,0,5);
         };
         
         if(view.fov == "ortho") {
-            cam_controls.enableRotate = false;
+            cameraControls.enableRotate = false;
         }
         
-        cam_controls.update();
-        view.camera_controls = cam_controls;
+        cameraControls.update();
+        view.cameraControls = cameraControls;
     }
 
     getViews() {
@@ -241,6 +246,33 @@ export class ViewManager {
         return this.views[viewIndex].camera;
     }
 
+    getViewOrthoMode(viewIndex) {
+        return this.views[viewIndex].orthoMode;
+    }
+
+    swapViewIfOrtho(viewIndex, frustumFarPlane) {
+        const view = this.views[viewIndex];
+        if(view.fov != "ortho") {
+            return false;
+        }
+
+        if(view.orthoMode == "elevation") {
+            view.camera.position.set(0, frustumFarPlane, frustumFarPlane/2);
+            view.camera.up.set(0,0,-1);
+            view.orthoMode = "plan";
+        }
+        else {
+            view.camera.position.set(-frustumFarPlane, 0, frustumFarPlane/2);
+            view.camera.up.set(0,1,0);
+            view.orthoMode = "elevation";
+        }
+            
+        view.camera.lookAt(0,0,frustumFarPlane/2);
+        view.cameraControls.target.set(0,0,frustumFarPlane/2);
+        
+        view.camera.updateProjectionMatrix();
+    }
+
     normalizePointerToView(pointer, viewIndex) {
         // Throw an exception if the specified view index is not within the bounds of 
         // the view array
@@ -289,7 +321,7 @@ export class ViewManager {
         const view = this.views[viewIndex];
     
         if(view.controllable)
-            view.camera_controls.enabled = enabled;
+            view.cameraControls.enabled = enabled;
     }
     
     #getViewRenderArea(viewIndex) {
@@ -307,12 +339,10 @@ export class ViewManager {
         const aspect = (viewWidth) / (viewHeight);
 
         if(view.fov == "ortho"){
-            const centerH = (camera.right + camera.left) / 2;
-            
             const hDist = (camera.top - camera.bottom) * aspect;
 
-            camera.left = centerH - hDist / 2;
-            camera.right = centerH + hDist / 2;
+            camera.left = -hDist / 2;
+            camera.right = hDist / 2;
         }
         else{
             camera.aspect = aspect;

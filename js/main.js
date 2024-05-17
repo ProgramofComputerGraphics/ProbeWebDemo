@@ -3,34 +3,22 @@ import * as THREE from 'three';
 import { ProbeScene } from './scene.js'
 
 import { ViewManager } from './views.js';
+import { initControls } from './controls.js';
 
-
-const renderer = new THREE.WebGLRenderer();
-
-// Create a pointer for representing the current mouse cursor position
-const pointer = new THREE.Vector2();
-
-// Create variables for representing the renderer window width/height
-let windowWidth, windowHeight;
 
 // Create variable for the view manager
 let viewManager;
-
-// Create variable for currently hovered view
-let hoveredViewIndex = -1;
 
 // Create variable for the scene
 let probeScene;
 
 
 function init() {
-	viewManager = new ViewManager(renderer.domElement);
+	viewManager = new ViewManager();
 
-	probeScene = new ProbeScene(viewManager.getViewByName("realView"),
-								viewManager, 
-								renderer.domElement);
+	probeScene = new ProbeScene(viewManager);
 
-	renderer.setSize(200, 150, false);
+	initControls(probeScene);
 
 	window.addEventListener('resize', onWindowResize);
 	window.addEventListener('mousedown', onMouseDown);
@@ -54,17 +42,23 @@ window.onFullscreenButtonPressed = function(viewName) {
 	}
 }
 
-function calculateNDCMousePosition(event) {
-	// Get the bounding rectangle of the renderer canvas
-	const rect = renderer.domElement.getBoundingClientRect();
+window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
+	const view = viewManager.getViewByName(viewName);
 
-	// calculate pointer position in normalized device coordinates
-	// (-1 to +1) for both components
+	viewManager.swapViewIfOrtho(view, probeScene.getFarPlane());
 
-	var mouseX = (event.clientX - rect.left) / rect.width * 2 - 1;
-	var mouseY = -(event.clientY - rect.top) / rect.height * 2 + 1;
+	const mode = viewManager.getViewOrthoMode(view);
+	const button = document.getElementById(buttonID);
 
-	return new THREE.Vector2(mouseX, mouseY);
+	if(mode == "elevation") {
+		button.textContent = "Elevation (Click to Swap to Plan)";
+	}
+	else if(mode == "plan") {
+		button.textContent = "Plan (Click to Swap to Elevation)";
+	}
+	else {
+		console.error("Error: Non-Ortho View Accessed by Ortho Swap Button");
+	}
 }
 
 function onWindowResize() {
@@ -73,44 +67,11 @@ function onWindowResize() {
 
 // Modified from https://threejs.org/docs/index.html?q=ray#api/en/core/Raycaster
 function onPointerMove(event) {
-	// Get the NDC mouse coordinates
-	const mouseCoords = calculateNDCMousePosition(event);
-
-	// Update current mouse pointer coordinates
-	pointer.x = mouseCoords.x;
-	pointer.y = mouseCoords.y;
-
-	// Get new hovered view
-	const newHoveredViewIndex = viewManager.getHoveredView(pointer);
-
-	// Update camera controls if hovered view has changed
-	if(hoveredViewIndex != newHoveredViewIndex) {
-		// Disable camera controls on the old view
-		viewManager.setViewControlsEnabled(hoveredViewIndex, false);
-		
-		// Enable camera controls on the new view
-		viewManager.setViewControlsEnabled(newHoveredViewIndex, true);
-
-		// Update the currently hovered view to the new hovered view
-		hoveredViewIndex = newHoveredViewIndex;
-	}
+	
 }
 
 function onMouseDown(event) {
-	// Get the NDC mouse coordinates
-	const mouseCoords = calculateNDCMousePosition(event);
-
-	// Get the currently hovered view
-	const hoveredView = viewManager.getHoveredView(mouseCoords);
-
-	if(hoveredView != -1) {
-		const intersects = raycastHUDElement(mouseCoords, hoveredView);
-
-		if(intersects != null) {
-			const activeView = viewManager.getActiveView();
-			viewManager.setActiveView(activeView == hoveredView ? -1 : hoveredView);
-		}
-	}
+	
 }
 
 // Modified from https://threejs.org/examples/webgl_multiple_views

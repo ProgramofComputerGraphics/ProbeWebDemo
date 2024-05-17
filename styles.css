@@ -20,17 +20,20 @@ body {
     flex-direction: row; /* Lay out children horizontally */
     align-items: flex-start; /* Align children to the top */
     overflow-x: hidden; /* Hide horizontal overflow */
-    background-color: rgb(9, 0, 61); /* Just for visibility */
+    background-color: black; 
     width: 100%;
     max-height: 100%;
 }
 
 .controls-section {
     flex: 0 0 auto; /* Controls take up as much space as they need */
-    padding: 20px;
+    margin-left: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
     white-space: nowrap; /* Prevent text from wrapping */
-    background-color: lightgray;
+    background-color: rgb(46, 46, 46);
     min-width: 15%;
+    height: 90vh;
     max-height: 100%;
   }
 
@@ -98,27 +101,35 @@ body {
 }
 
 /* Common Demo UI Elements */
-/*.menu
+.menu
 { 
-    background-color: rgb(46, 46, 46);
     color:rgb(255, 255, 255);
-    margin-left: 20px;
-    text-align: "left";
-    padding-top: 20px;
-}
-
-.submenu
-{ 
-    background-color: rgb(46, 46, 46);
-    color:rgb(255, 255, 255);
-    margin-left: 40px;
     text-align: "left";
     padding-top: 10px;
 }
 
-.submenu_label
+.menu-label
 { 
-    background-color: rgb(46, 46, 46);
+    color:rgb(255, 255, 255);
+    text-align: center;
+    align-content: center;
+    padding-top: 20px;
+    font-size: 36px;
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace; 
+    width: 100%;
+}
+
+.submenu
+{ 
+    color:rgb(255, 255, 255);
+    margin-left: 10px;
+    text-align: "left";
+    padding-top: 10px;
+}
+
+.submenu-label
+{ 
     color:rgb(255, 255, 255);
     margin-left: 20px;
     text-align: "left";
@@ -128,9 +139,9 @@ body {
     font-family: "Lucida Console", "Courier New", monospace; 
 }
 
-.submenu_item
+.submenu-item
 {
-    margin-left: 40px;
+    margin-left: 20px;
     padding-top: 2px; 
     padding-bottom: 2px;
 }
@@ -146,8 +157,10 @@ body {
 .hidden {
     display: none;
 }   
-*/
 
-
+/* Track: webkit browsers */
+.standard-number{
+    width: 3em;
+}
 
 

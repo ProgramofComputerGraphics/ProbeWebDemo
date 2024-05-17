@@ -11,9 +11,22 @@
 		</div>
 		<div class="container">
 			<div class="controls-section">
-				<button>Button 1</button>
-				<button>Button 2</button>
-				<button>Button 3</button>
+				<div class="menu-label" id="controlsLabel">
+					Controls
+				</div>
+				<hr>
+				<div class="menu" id="controlsMenu">
+					<div class="submenu-label" id="frustumControlsLabel">
+						Frustum
+					</div>
+					<div class="submenu" id="fovControls">
+						<div class="submenu-item">
+							<label for="fovSlider"> Field of View (FOV): </label>
+							<input type="number" id="fovEntry" min="0.1" max="179.9" value="45" title="FOV (in degrees)" class="standard-number">
+							<input type="range" id="fovSlider" min="1" max="179" step="1" value="45" class="standard-slider">
+						</div>
+					</div>
+				</div>
 			</div>
 			<div class="render-section">
 				<div class="overall-views-container" id="viewsContainer">
@@ -39,7 +52,10 @@
 					<div class="individual-view-container" id="orthoViewContainer">	
 						<div class="view-header">
 							<label class="header-label"> Orthographic View </label>
-							<button class="header_button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')"> Fullscreen </button>
+							<div style="height:100%">
+								<button class="header_button" id="orthoSwapButton" onclick="onOrthoSwapButtonPressed('orthoView', 'orthoSwapButton')" style="height:100%"> Elevation (Click to Swap to Plan) </button>
+								<button class="header_button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')" style="height:100%"> Fullscreen </button>
+							</div>
 						</div>
 						<div class="view-render-area" id="orthoView"></div>
 					</div>
