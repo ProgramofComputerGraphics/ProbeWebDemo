@@ -5,50 +5,116 @@ const nearPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0x4040e0});
 const farPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0xe04040});
 
 
-export function generateRealFrustumSideLines(fov, far) {
+// class Frustum {
+
+// }
+
+
+export function generateRealFrustumSideLines(fov, near, far) {
     // Compute "slope" of the frustum pyramid (change in X/Y over change in Z)
     // Note: Because we assume a square frustum, this slope is the same for both
     // X and Y. Also note that the angle is divided by two, which is why there is
     // a division by 360 instead of 180.
     const frustumSlope = Math.tan(fov * Math.PI / 360);
 
+    // Compute the X/Y Distance from the center of the frustum to the inner
+    // corners. This value is used to create the near-plane frustum vertices. 
+    const frustumNearXandY = frustumSlope * near;
+
     // Compute the X/Y Distance from the center of the frustum to the outer
-    // corners. This value is used to create the frustum vertices. 
+    // corners. This value is used to create the far-plane frustum vertices. 
     const frustumFarXandY = frustumSlope * far;
 
     // Create frustum line vertex pairs
     const frustumPoints = [];
 
-    // These vertices define the pyramid line from the tip to the bottom-
-    // left corner.
-    frustumPoints.push(new THREE.Vector3(0,0,0));
+    // These vertices define the truncated pyramid line for the bottom-
+    // left corner of the frustum.
+    frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                         -frustumNearXandY,
+                                         near));
     frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                          -frustumFarXandY,
                                          far));
 
-    // These vertices define the pyramid line from the tip to the bottom-
-    // right corner.
-    frustumPoints.push(new THREE.Vector3(0,0,0));
+    // These vertices define the truncated pyramid line for the bottom-
+    // right corner of the frustum
+    frustumPoints.push(new THREE.Vector3(frustumNearXandY,
+                                         -frustumNearXandY,
+                                         near));
     frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                          -frustumFarXandY,
                                          far));
     
-    // These vertices define the pyramid line from the tip to the top-
-    // left corner.
-    frustumPoints.push(new THREE.Vector3(0,0,0));
+    // These vertices define the truncated pyramid line for the top-
+    // left corner of the frustum.
+    frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                         frustumNearXandY,
+                                         near));
     frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                          frustumFarXandY,
                                          far));                                             
 
-    // These vertices define the pyramid line from the tip to the top-
-    // right corner.
-    frustumPoints.push(new THREE.Vector3(0,0,0));
+    // These vertices define the truncated pyramid line for the top-
+    // right corner of the frustum.
+    frustumPoints.push(new THREE.Vector3(frustumNearXandY,
+                                         frustumNearXandY,
+                                         near));
     frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                          frustumFarXandY,
                                          far)); 
 
     // Create frustum buffer geometry from vertex pairs
     const frustumGeo = new THREE.BufferGeometry().setFromPoints(frustumPoints);
+
+    // Create frustum line geometry
+    return new THREE.LineSegments(frustumGeo, frustumSideLineMaterial); 
+}
+
+export function generateRealFrustumTipLines(fov, near) {
+    // Compute "slope" of the frustum pyramid (change in X/Y over change in Z)
+    // Note: Because we assume a square frustum, this slope is the same for both
+    // X and Y. Also note that the angle is divided by two, which is why there is
+    // a division by 360 instead of 180.
+    const frustumSlope = Math.tan(fov * Math.PI / 360);
+
+    // Compute the X/Y Distance from the center of the frustum to the inner
+    // corners. This value is used to create the near-plane frustum vertices. 
+    const frustumNearXandY = frustumSlope * near;
+
+    // Create frustum line vertex pairs
+    const frustumTipPoints = [];
+
+    // These vertices define the pyramid tip line for the bottom-
+    // left corner of the frustum.
+    frustumTipPoints.push(new THREE.Vector3(0,0,0));
+    frustumTipPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                            -frustumNearXandY,
+                                            near));
+
+    // These vertices define the pyramid tip line for the bottom-
+    // right corner of the frustum
+    frustumTipPoints.push(new THREE.Vector3(0,0,0));
+    frustumTipPoints.push(new THREE.Vector3(frustumNearXandY,
+                                            -frustumNearXandY,
+                                            near));
+    
+    // These vertices define the pyramid tip line for the top-
+    // left corner of the frustum.
+    frustumTipPoints.push(new THREE.Vector3(0,0,0));
+    frustumTipPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                            frustumNearXandY,
+                                            near));                                             
+
+    // These vertices define the pyramid tip line for the top-
+    // right corner of the frustum.
+    frustumTipPoints.push(new THREE.Vector3(0,0,0));
+    frustumTipPoints.push(new THREE.Vector3(frustumNearXandY,
+                                            frustumNearXandY,
+                                            near));
+
+    // Create frustum buffer geometry from vertex pairs
+    const frustumGeo = new THREE.BufferGeometry().setFromPoints(frustumTipPoints);
 
     // Create frustum line geometry
     return new THREE.LineSegments(frustumGeo, frustumSideLineMaterial); 

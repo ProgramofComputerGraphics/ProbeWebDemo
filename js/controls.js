@@ -1,20 +1,26 @@
 import { ProbeScene } from "./scene.js";
+import { ViewManager } from "./views.js";
 
-export function initControls(probeScene) {
 
+
+export function initControls(probeScene, viewManager, perspViewIndex) {
     // FOV Number/Slider
     const fovNumber = document.getElementById("fovEntry");
     const fovSlider = document.getElementById("fovSlider");
-    
-    fovNumber.addEventListener("change", () => { 
-        probeScene.setFOV(fovNumber.value); 
-        fovSlider.value = fovNumber.value;
-    });
 
-    fovSlider.addEventListener("input", () => { 
-        probeScene.setFOV(fovSlider.value); 
-        fovNumber.value = fovSlider.value;
-    });
+    let updateFOV = (event) => {
+        probeScene.setFOV(fovNumber.value); 
+        
+        viewManager.getViewCamera(perspViewIndex).fov = fovNumber.value;
+        
+        if(event.srcElement.className == "standard-slider")
+            fovNumber.value = fovSlider.value;
+        else 
+            fovSlider.value = fovNumber.value;
+    }
+
+    fovNumber.addEventListener("change", updateFOV);
+    fovSlider.addEventListener("input", updateFOV);
 
     // Shading Behavior
     const shadingDropdown = document.getElementById("shadingDropdown");

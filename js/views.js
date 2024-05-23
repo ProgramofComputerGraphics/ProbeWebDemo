@@ -6,8 +6,11 @@ import { generateImageFrustumClippingPlanes } from './frustum.js';
 
 const orthoPadding = 0.25;
 
-export class ViewManager {
-    constructor() {
+export class ViewManager {  
+    #activeView;
+    #probeScene;
+
+    constructor(probeSceneArg) {
         
         // Initializes the four views:
         //  - Real World
@@ -24,7 +27,9 @@ export class ViewManager {
                 up: [ 0, 1, 0 ],
                 fov: 30,
                 controllable: true,
+                rotatable: true,
                 imagespace: false,
+                gumball: true,
             },
             {
                 name: "orthoView",
@@ -33,8 +38,11 @@ export class ViewManager {
                 eye: [ -10, 0, 5 ],
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
+                vDist: 10,
                 controllable: true,
+                rotatable: false,
                 imagespace: false,
+                gumball: true,
             },
             {
                 name: "perspView",
@@ -45,6 +53,7 @@ export class ViewManager {
                 fov: 45,
                 controllable: false,
                 imagespace: false,
+                gumball: false,
             },
             {
                 name: "imageView",
@@ -52,14 +61,18 @@ export class ViewManager {
                 // background: new THREE.Color().setRGB( 0.7, 0.5, 0.5, THREE.SRGBColorSpace ),
                 eye: [-12 , 3, -2 ],
                 up: [ 0, 1, 0 ],
-                fov: 15,
+                fov: "ortho",
+                vDist: 2.5,
                 controllable: true,
+                rotatable: true,
                 imagespace: true,
+                gumball: false,
             }
         ];
 
         // Create variable for representing the currently active view
-        this.activeView = -1;
+        this.#activeView = -1;
+        this.#probeScene = probeSceneArg;
         
         for (let ii = 0; ii < this.views.length; ++ii) {
             const view = this.views[ii];
@@ -70,10 +83,11 @@ export class ViewManager {
             // Set up the renderer for each view
             this.#initRenderer(view);
 
+            // Set up mouse listener for each view
+            this.#initMousePressListener(view, ii);
+
             // Initialize camera controls if view is controllable
-            if(view.controllable) {
-                this.#initCameraControls(view);
-            }
+            this.#initCameraControls(view);
         }
     }
 
@@ -84,10 +98,12 @@ export class ViewManager {
         // for orthographic cameras). 
         if(view.fov == "ortho"){
             const estimatedAspect = window.innerWidth * 0.85 / window.innerHeight;
-            const startFar = 10; // TODO Remove this magic number
-            const hDist = orthoPadding + startFar / 2;
+            const vDistAdjusted = view.vDist + orthoPadding*2;
+            const hDist = vDistAdjusted * estimatedAspect;
             view.orthoMode = "elevation";
-            camera = new THREE.OrthographicCamera(-hDist, hDist, hDist / estimatedAspect, -hDist / estimatedAspect);
+            camera = new THREE.OrthographicCamera(-hDist, hDist, 
+                                                    vDistAdjusted/2, 
+                                                    -vDistAdjusted/2);
             camera.up.fromArray(view.up);
         }
         else{
@@ -133,6 +149,9 @@ export class ViewManager {
     }
 
     #initCameraControls(view) {
+        if(!view.controllable)
+            return;
+
         const cameraControls = new OrbitControls(view.camera, view.renderer.domElement);
         
         // Define the target for the camera
@@ -143,7 +162,7 @@ export class ViewManager {
             cameraControls.target = new THREE.Vector3(0,0,5);
         };
         
-        if(view.fov == "ortho") {
+        if(!view.rotatable) {
             cameraControls.enableRotate = false;
         }
         
@@ -151,12 +170,34 @@ export class ViewManager {
         view.cameraControls = cameraControls;
     }
 
-    getViews() {
+    #initMousePressListener(view, viewIndex) {
+        const viewRenderCanvas = document.getElementById(view.name + "Canvas");
+
+        // If the canvas isn't found, print an error and end the method.
+        if(viewRenderCanvas == null) {
+            console.error("Error: Render canvas could not be found for " + view.name);
+            return;
+        }
+
+        viewRenderCanvas.addEventListener("click", (event) => {
+            this.#onMouseClicked(view, viewIndex, event);
+        });
+
+    }
+
+    #onMouseClicked(view, viewIndex, mouseEvent) {
+        const mousePos = new THREE.Vector2(mouseEvent.clientX, mouseEvent.clientY);
+        const pointer = this.normalizePointerToView(mousePos, viewIndex);
+
+        this.#probeScene.clickScene(pointer, view, viewIndex);
+    }
+
+    getViewData() {
         return this.views;
     }
 
     getActiveView() {
-        return this.activeView;
+        return this.#activeView;
     }
 
     setActiveView(viewIndex) {
@@ -178,7 +219,7 @@ export class ViewManager {
                 container.style.display = 'flex';
             }
 
-            this.activeView = -1;
+            this.#activeView = -1;
             return true;
         }
 
@@ -200,7 +241,7 @@ export class ViewManager {
                 container.style.display = 'none';
             }
 
-            this.activeView = viewIndex;
+            this.#activeView = viewIndex;
             return true;
         }
         
@@ -212,14 +253,14 @@ export class ViewManager {
         const zeroOnePointerX = (pointer.x + 1) / 2;
         const zeroOnePointerY = (pointer.y + 1) / 2;
     
-        if (this.activeView != -1) {
+        if (this.#activeView != -1) {
             if(zeroOnePointerX < 0 || zeroOnePointerX >= 1)
                 return -1;
             
             if(zeroOnePointerY < 0 || zeroOnePointerY >= 1)
                 return -1;
     
-            return this.activeView;
+            return this.#activeView;
         }
     
         // Check each view to see if the pointer position is within the view's window
@@ -280,7 +321,7 @@ export class ViewManager {
         view.camera.updateProjectionMatrix();
     }
 
-    normalizePointerToView(pointer, viewIndex) {
+    normalizePointerToView(mousePos, viewIndex) {
         // Throw an exception if the specified view index is not within the bounds of 
         // the view array
         if(viewIndex < 0 || viewIndex >= this.views.length)
@@ -288,36 +329,16 @@ export class ViewManager {
             throw new Error('Specified \'viewIndex\' is out of bounds: ' + viewIndex);
         }
     
-        // If the active view is the specified view, return the same coordinates
-        if(this.activeView == viewIndex)
-        {
-            return pointer;
-        }
-    
-        // If an active view is set, and it is not specified view, return null
-        if(this.activeView != -1)
-        {
-            return null;
-        }
-    
         // Otherwise, the position within the specified view's sub-window must be
         // computed.
+
+        const view = this.views[viewIndex];
+        const rect = view.renderer.domElement.getBoundingClientRect();
+
+        const mouseViewX = (mousePos.x - rect.left) / rect.width * 2 - 1;
+        const mouseViewY = -(mousePos.y - rect.top) / rect.height * 2 + 1;
         
-        // Convert pointer from [-1,1] range to [0,1] range
-        const zeroOnePointerX = (pointer.x + 1) / 2;
-        const zeroOnePointerY = (pointer.y + 1) / 2;
-        
-        // Get view window properties from the specified view
-        const left = this.views[viewIndex].left;
-        const bottom = this.views[viewIndex].bottom;
-        const width = this.views[viewIndex].width;
-        const height = this.views[viewIndex].height;
-    
-        // Normalize pointer within the specified view's sub-window (and convert back
-        // to [-1,1] range)
-        const newX = (zeroOnePointerX - left) / width * 2 - 1;
-        const newY = (zeroOnePointerY - bottom) / height * 2 - 1;
-        return new THREE.Vector2(newX, newY);
+        return new THREE.Vector2(mouseViewX, mouseViewY);
     }
 
     setViewControlsEnabled(viewIndex, enabled) {
@@ -373,9 +394,9 @@ export class ViewManager {
     }
 
     updateViewSizes() {
-        if(this.activeView != -1)
+        if(this.#activeView != -1)
         {
-            this.#updateViewSize(this.activeView);
+            this.#updateViewSize(this.#activeView);
             return;
         }
 

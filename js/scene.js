@@ -4,6 +4,7 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { generateRealFrustumSideLines,
+         generateRealFrustumTipLines,
          generateImageFrustumSideLines, 
          generateImageFrustumNearLines,
          generateImageFrustumFarLines } from './frustum.js';
@@ -12,11 +13,15 @@ import { generateRealFrustumSideLines,
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 const loader = new OBJLoader();
 
-let globalBoolean = true;
+const raycaster = new THREE.Raycaster();
+
+const flipX = new THREE.Matrix4();
+flipX.set( -1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1 );
 
 export class ProbeScene {
-    #viewManager;
-    
     #object;
     #objMaterial;
     #objShadingMode
@@ -26,13 +31,16 @@ export class ProbeScene {
     #frustumFar;
 
     #gumball;
+    #gumballView;
     
-    constructor(viewManagerArg) {
+    constructor() {
         // Set global variables    
-        this.#viewManager = viewManagerArg;
-
         this.#object = null;
         this.#objMaterial = new THREE.MeshStandardMaterial({color : 0xffffff,
+                                                            metalness : 0,
+                                                            roughness : 1,
+                                                            envMapIntensity : 0,
+                                                            lightMapIntensity: 0,
                                                             flatShading : true});
         this.#objShadingMode = "flat";
 
@@ -41,6 +49,7 @@ export class ProbeScene {
         this.#frustumFar = 10;
 
         this.#gumball = null;
+        this.#gumballView = -1;
 
         // The scene is implemented as two separate scenes:
         //  - One is the undistorted "real world" scene, it contains the truncated pyramid frustum
@@ -68,15 +77,27 @@ export class ProbeScene {
         
         // TODO: Add Pyramid Frustum Objects
 
-        // Create the group representing all the real frustum objects
+        // Create the group representing the real frustum objects (excluding the tip)
         this.realFrustumGroup = new THREE.Group();
 
-        // Create the frustum line geometry & add it to the group
-        this.realFrustumGroup.add(generateRealFrustumSideLines(this.#frustumFOV, 
+        // Create the frustum side line geometry & add it to the group
+        this.realFrustumGroup.add(generateRealFrustumSideLines(this.#frustumFOV,
+                                                               this.#frustumNear, 
                                                                this.#frustumFar));
 
-        // Add the frustum object group to the real scene
+        // Create the frustum tip group
+        // NOTE: This is kept separate from main frustum group as it cannot be
+        // transformed into image space, and it is not used for parallel projection
+        // mode.
+        this.realFrustumTipGroup = new THREE.Group();
+
+        // Create the frustum tip line geometry and add it to the frustum tip group
+        this.realFrustumTipGroup.add(generateRealFrustumTipLines(this.#frustumFOV,
+                                                                 this.#frustumNear));
+
+        // Add the frustum object groups to the real scene
         this.realScene.add(this.realFrustumGroup);
+        this.realScene.add(this.realFrustumTipGroup);
     
         initSceneLights(this.realScene);
     }
@@ -103,10 +124,15 @@ export class ProbeScene {
     #updateFrustumGeometries() {
         // Clear the frustum groups
         this.realFrustumGroup.clear();
+        this.realFrustumTipGroup.clear();
 
         // Regenerate the real frustum pyramid lines
-        this.realFrustumGroup.add(generateRealFrustumSideLines(this.#frustumFOV, 
+        this.realFrustumGroup.add(generateRealFrustumSideLines(this.#frustumFOV,
+                                                                this.#frustumNear, 
                                                                 this.#frustumFar));
+
+        this.realFrustumTipGroup.add(generateRealFrustumTipLines(this.#frustumFOV,
+                                                                 this.#frustumNear));
     }
 
     #changeSceneObject(newObject) {
@@ -124,29 +150,6 @@ export class ProbeScene {
     
         this.#object.position.z = 2.5;
     }
-
-    #attachTransformControlsToObject() { 
-        // if(this._gumball != null) {
-        //     this.realScene.remove(this._gumball)
-        //     this._gumball.dispose();
-        // }
-    
-        // const camera = this._viewManager.getViewCamera(this._transformControlsView);
-        
-        // this._gumball = new TransformControls(camera, 
-        //                                 this._renderDomElement);
-    
-        // this._gumball.addEventListener('dragging-changed', function(event){
-        //     this.viewManager.setViewControlsEnabled(this.transformControlsView, 
-        //                                             !event.value);
-    
-        //     console.log("Controls Set To:", !event.value);
-        // });
-    
-        // this._gumball.attach(this._object);
-
-        // this.realScene.add(this._gumball);
-    }
     
     #addLoadedObjectToScene(loadedObject) {
         // Swap object to the newly loaded object
@@ -157,8 +160,7 @@ export class ProbeScene {
             try {
                 mesh.material = this.material;
             }
-            catch(error)
-            {
+            catch(error) {
                 console.log("Non-mesh element loaded from OBJ; scene material cannot be applied!");
             }
         });
@@ -264,20 +266,11 @@ export class ProbeScene {
             vertex.applyMatrix4(obj.matrixWorld);
             vertex.applyMatrix4(camera.matrixWorldInverse);
             vertex.applyMatrix4(camera.projectionMatrix);
+            vertex.applyMatrix4(flipX);
 
             // Set position to vertex
             positionAttribute.setXYZ(i, vertex.x, vertex.y, (vertex.z + 1)/2); 
         }
-
-        const indices = obj.geometry.index.array;
-        for (let i = 0; i < indices.length; i+=3) {
-            let x = indices[i];
-            indices[i] = indices[i + 2];
-            indices[i+2] = x;
-        }
-
-        if(globalBoolean)
-            globalBoolean = false;
 
         obj.geometry.attributes.position.needsUpdate = true;
     }
@@ -327,23 +320,143 @@ export class ProbeScene {
         return distortedObj;
     }
 
-    renderScene(renderer, camera, showFrustum, imagespace)
+    raycastScene(screenCoords, camera, imagespace) {
+        raycaster.setFromCamera(screenCoords, camera);
+
+        if(!imagespace) {
+            return raycaster.intersectObjects(this.realScene.children);
+        }
+        else {
+            return raycaster.intersectObjects(this.imageSpaceScene.children);
+        }
+    }
+
+    #createGumball(view, viewIndex) { 
+        // Create a new transform control widget
+        this.#gumball = new TransformControls(view.camera, view.renderer.domElement);
+
+        // Add mousedown/up event handling
+        this.#gumball.addEventListener("mouseDown", (event) => {
+            if(view.cameraControls != null)
+                view.cameraControls.enabled = false;
+        });
+        this.#gumball.addEventListener("mouseUp", (event) => {
+            if(view.cameraControls != null)
+                view.cameraControls.enabled = true;
+        });
+
+        // Attach it to the clicked object 
+        this.#gumball.attach(this.#object);
+
+        // Add gumball to scene
+        this.realScene.add(this.#gumball);
+
+        // Set gumball to invisible - it is made visible for the specific
+        // view during rendering
+        this.#gumball.visible = false;
+
+        // Set gumball view variable
+        this.#gumballView = viewIndex;
+    }
+
+    #destroyGumball() {
+        // Remove gumball from scene
+        this.realScene.remove(this.#gumball);
+
+        // Call dispose on gumball
+        this.#gumball.dispose();
+
+        // Reset gumball instance variable
+        this.#gumball = null;
+
+        // Reset gumball view variable
+        this.#gumballView = -1;
+    }
+
+    clickScene(screenCoords, view, viewIndex) {
+        // Destroy existing gumball if the clicked view is different 
+        // than the gumball's view
+        if(this.#gumball != null &&
+            viewIndex != this.#gumballView) {
+            this.#destroyGumball();
+        }
+
+        // Check if view is allowed to have a gumball. Return early if not.
+        if(!view.gumball)
+            return;
+
+        const intersects = this.raycastScene(screenCoords, 
+                                            view.camera, 
+                                            view.imagespace);
+
+        // Case 1: Gumball is currently null
+        if(this.#gumball == null)
+        {
+            // If no intersections, return early
+            if(intersects.length == 0) {
+                return;
+            }
+
+            // Discard invalid intersections (TODO: Improve)
+            while(intersects[0].object != this.#object) {
+                intersects.shift();
+
+                if(intersects.length == 0) {
+                    return;
+                }
+            }  
+
+            this.#createGumball(view, viewIndex);
+        }
+        // Case 2: Gumball is currently active
+        else {
+            // If no intersections, return early
+            if(intersects.length == 0) {
+                this.#destroyGumball();
+                return;
+            }
+
+            // Iterate through intersections (TODO: Improve)
+            while(intersects[0].object != this.#object) {
+                
+                const result = intersects.shift();
+                  
+                if(result.object instanceof THREE.Mesh &&
+                    result.object.type != "TransformControlsPlane") {
+                        return;
+                }
+
+                if(intersects.length == 0) {
+                    this.#destroyGumball();
+                    return;
+                }
+            }
+        }
+    }
+
+    renderScene(viewIndex, renderer, camera, showFrustum, imagespace)
     {
+        if(this.#gumballView == viewIndex)
+            this.#gumball.visible = true;
+
         // If rendering the scene without distortion, simply render and return 
         if(!imagespace) {
             this.realFrustumGroup.visible = showFrustum;
             renderer.render(this.realScene, camera);
-            return;
+        }
+        else {
+            const distortedObj = this.#getDistortedObject();
+            this.imageSpaceScene.add(distortedObj);
+    
+            this.imageFrustumGroup.visible = showFrustum;
+    
+            renderer.render(this.imageSpaceScene, camera);
+    
+            this.imageSpaceScene.remove(distortedObj);
         }
 
-        const distortedObj = this.#getDistortedObject();
-
-        this.imageSpaceScene.add(distortedObj);
-
-        this.imageFrustumGroup.visible = showFrustum;
-
-        renderer.render(this.imageSpaceScene, camera);
-        this.imageSpaceScene.remove(distortedObj);
+        if(this.#gumballView == viewIndex)
+            this.#gumball.visible = false;
     }
 }
 

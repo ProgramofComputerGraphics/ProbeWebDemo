@@ -14,11 +14,14 @@ let probeScene;
 
 
 function init() {
-	viewManager = new ViewManager();
+	probeScene = new ProbeScene();
+	
+	viewManager = new ViewManager(probeScene);
 
-	probeScene = new ProbeScene(viewManager);
+	// Get the perspective view
+	const perspView = viewManager.getViewByName("perspView");
 
-	initControls(probeScene);
+	initControls(probeScene, viewManager, perspView);
 
 	window.addEventListener('resize', onWindowResize);
 	window.addEventListener('mousedown', onMouseDown);
@@ -76,8 +79,8 @@ function onMouseDown(event) {
 
 // Modified from https://threejs.org/examples/webgl_multiple_views
 function render() {
-	var views = viewManager.getViews();
-	var activeView = viewManager.getActiveView();
+	const views = viewManager.getViewData();
+	const activeView = viewManager.getActiveView();
 
 	viewManager.updateViewSizes();
 
@@ -85,13 +88,15 @@ function render() {
 	if(activeView == -1) {
 		for (let ii = 0; ii < views.length; ++ii) {
 			const view = views[ii];
-			probeScene.renderScene(view.renderer, view.camera, true, view.imagespace);
+			probeScene.renderScene(ii, view.renderer, view.camera, 
+									true, view.imagespace);
 		}
 	}
 	// Otherwise, render the active view.
 	else {
 		const view = views[activeView];
-		probeScene.renderScene(view.renderer, view.camera, true, view.imagespace);
+		probeScene.renderScene(activeView, view.renderer, view.camera, 
+								true, view.imagespace);
 	}
 
 }
