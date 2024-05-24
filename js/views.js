@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { generateImageFrustumClippingPlanes } from './frustum.js';
+import { Frustum } from './frustum.js';
 
 const orthoPadding = 0.25;
 
@@ -39,6 +39,7 @@ export class ViewManager {
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
                 vDist: 10,
+                orthoMode: "elevation",
                 controllable: true,
                 rotatable: false,
                 imagespace: false,
@@ -53,13 +54,14 @@ export class ViewManager {
                 fov: 45,
                 controllable: false,
                 imagespace: false,
+                frustumLinesOnly: true,
                 gumball: false,
             },
             {
                 name: "imageView",
                 containerID: "imageViewContainer",
                 // background: new THREE.Color().setRGB( 0.7, 0.5, 0.5, THREE.SRGBColorSpace ),
-                eye: [-12 , 3, -2 ],
+                eye: [-24 , 6, -4 ],
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
                 vDist: 2.5,
@@ -76,6 +78,11 @@ export class ViewManager {
         
         for (let ii = 0; ii < this.views.length; ++ii) {
             const view = this.views[ii];
+
+            // Add linesOnly property if undefined
+            if(view.frustumLinesOnly == null) {
+                view.frustumLinesOnly = false;
+            }
 
             // Initialize the camera for each view
             this.#initViewCamera(view);
@@ -100,7 +107,7 @@ export class ViewManager {
             const estimatedAspect = window.innerWidth * 0.85 / window.innerHeight;
             const vDistAdjusted = view.vDist + orthoPadding*2;
             const hDist = vDistAdjusted * estimatedAspect;
-            view.orthoMode = "elevation";
+            
             camera = new THREE.OrthographicCamera(-hDist, hDist, 
                                                     vDistAdjusted/2, 
                                                     -vDistAdjusted/2);
@@ -132,6 +139,9 @@ export class ViewManager {
         // Initialize the view's renderer
         view.renderer = new THREE.WebGLRenderer();
 
+        if(view.imagespace)
+            view.renderer = new THREE.WebGLRenderer({ precision: 'highp' });
+
         // Set the renderer's DOM element's ID and class
         view.renderer.domElement.id = view.name + "Canvas";
         view.renderer.domElement.class = "render-canvas";
@@ -144,7 +154,7 @@ export class ViewManager {
 
         // Add Clipping Planes for Imagespace Renderer
         if(view.imagespace) {
-            view.renderer.clippingPlanes = generateImageFrustumClippingPlanes();
+            view.renderer.clippingPlanes = Frustum.generateImageFrustumClippingPlanes();
         }
     }
 

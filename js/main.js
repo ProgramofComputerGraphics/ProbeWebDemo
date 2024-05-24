@@ -89,7 +89,8 @@ function render() {
 		for (let ii = 0; ii < views.length; ++ii) {
 			const view = views[ii];
 			probeScene.renderScene(ii, view.renderer, view.camera, 
-									true, view.imagespace);
+									true, view.frustumLinesOnly, 
+									view.imagespace);
 		}
 	}
 	// Otherwise, render the active view.
