@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 import { ProbeScene } from './scene.js'
 
 import { ViewManager } from './views.js';
@@ -19,9 +17,9 @@ function init() {
 	viewManager = new ViewManager(probeScene);
 
 	// Get the perspective view
-	const perspView = viewManager.getViewByName("perspView");
+	const cameraView = viewManager.getViewByName("cameraView");
 
-	initControls(probeScene, viewManager, perspView);
+	initControls(probeScene, viewManager, cameraView);
 
 	window.addEventListener('resize', onWindowResize);
 	window.addEventListener('mousedown', onMouseDown);
@@ -97,7 +95,8 @@ function render() {
 	else {
 		const view = views[activeView];
 		probeScene.renderScene(activeView, view.renderer, view.camera, 
-								true, view.imagespace);
+								true, view.frustumLinesOnly, 
+								view.imagespace);
 	}
 
 }

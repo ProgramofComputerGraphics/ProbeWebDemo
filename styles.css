@@ -80,7 +80,7 @@ body {
 .header-label{
     font-weight: bold;
     font-family: "Lucida Console", "Courier New", monospace; 
-    font-size: 32px;
+    font-size: 24px;
     color:rgb(192, 192, 192);
     text-align: center;
 }
@@ -145,6 +145,13 @@ body {
     padding-bottom: 2px;
 }
 
+.subsubmenu-item
+{
+    margin-left: 30px;
+    padding-top: 2px; 
+    padding-bottom: 2px;
+}
+
 .shadertext
 {
    width: 95%;
@@ -179,6 +186,16 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 
 input[type="color"]::-webkit-color-swatch {
     border: none;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number]{
+    -moz-appearance: textfield;
 }
 
 

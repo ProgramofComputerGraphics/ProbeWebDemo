@@ -7,6 +7,7 @@ import { Frustum } from './frustum.js';
 const orthoPadding = 0.25;
 
 export class ViewManager {  
+    #views;
     #activeView;
     #probeScene;
 
@@ -18,7 +19,7 @@ export class ViewManager {
         //  - Perspective
         //  - Imagespace
         // Modified from https://threejs.org/examples/webgl_multiple_views
-        this.views = [
+        this.#views = [
             {
                 name: "realView",
                 containerID: "realViewContainer",
@@ -46,8 +47,8 @@ export class ViewManager {
                 gumball: true,
             },
             {
-                name: "perspView",
-                containerID: "perspViewContainer",
+                name: "cameraView",
+                containerID: "cameraViewContainer",
                 // background: new THREE.Color().setRGB( 0.5, 0.7, 0.7, THREE.SRGBColorSpace ),
                 eye: [ 0, 0, 0 ],
                 up: [ 0, 1, 0 ],
@@ -76,8 +77,8 @@ export class ViewManager {
         this.#activeView = -1;
         this.#probeScene = probeSceneArg;
         
-        for (let ii = 0; ii < this.views.length; ++ii) {
-            const view = this.views[ii];
+        for (let ii = 0; ii < this.#views.length; ++ii) {
+            const view = this.#views[ii];
 
             // Add linesOnly property if undefined
             if(view.frustumLinesOnly == null) {
@@ -203,7 +204,7 @@ export class ViewManager {
     }
 
     getViewData() {
-        return this.views;
+        return this.#views;
     }
 
     getActiveView() {
@@ -218,14 +219,14 @@ export class ViewManager {
             overallContainer.style.gridTemplateRows = '1fr 1fr';
 
             // Re-enable all currently invisible views
-            for(let i = 0; i < this.views.length; ++i) {
+            for(let i = 0; i < this.#views.length; ++i) {
                 // Set all views to a small, equal size - this ensures they all
                 // grow to fill the screen correctly on the next call to
                 // updateViewSizes()
-                this.views[i].renderer.setSize(1,1);
+                this.#views[i].renderer.setSize(1,1);
 
                 // Set all views to display their contents
-                const container = document.getElementById(this.views[i].containerID);
+                const container = document.getElementById(this.#views[i].containerID);
                 container.style.display = 'flex';
             }
 
@@ -237,17 +238,17 @@ export class ViewManager {
         // allow one to switch which view is fullscreen. This logic assumes that the
         // current active view must be -1 if you are setting it to a non-negative 1
         // value. 
-        if(viewIndex >= 0 && viewIndex < this.views.length) {
+        if(viewIndex >= 0 && viewIndex < this.#views.length) {
             // Set the overall container grid to 1x1
             const overallContainer = document.getElementById("viewsContainer");
             overallContainer.style.gridTemplateColumns = '1fr';
             overallContainer.style.gridTemplateRows = '1fr';
 
-            for(let i = 0; i < this.views.length; ++i) {
+            for(let i = 0; i < this.#views.length; ++i) {
                 // Skip view that will become the active view
                 if(i == viewIndex) continue;
                 
-                const container = document.getElementById(this.views[i].containerID);
+                const container = document.getElementById(this.#views[i].containerID);
                 container.style.display = 'none';
             }
 
@@ -274,8 +275,8 @@ export class ViewManager {
         }
     
         // Check each view to see if the pointer position is within the view's window
-        for(let i = 0; i < this.views.length; ++i) {
-            const view = this.views[i];
+        for(let i = 0; i < this.#views.length; ++i) {
+            const view = this.#views[i];
     
             if(view.left <= zeroOnePointerX && 
                 zeroOnePointerX < view.left + view.width) {
@@ -291,8 +292,8 @@ export class ViewManager {
     }
 
     getViewByName(name) {
-        for(let i = 0; i < this.views.length; ++i) {
-            if(this.views[i].name == name) {
+        for(let i = 0; i < this.#views.length; ++i) {
+            if(this.#views[i].name == name) {
                 return i;
             }
         }
@@ -300,16 +301,49 @@ export class ViewManager {
         return -1;
     }
 
+    getViewArea(viewIndex) {
+        const view = this.#views[viewIndex];
+
+        return document.getElementById(view.name).getBoundingClientRect();
+    }
+
+    getViewAspect(viewIndex) {
+        const rect = this.getViewArea(viewIndex);
+
+        return rect.width / rect.height;
+    }
+
     getViewCamera(viewIndex) {
-        return this.views[viewIndex].camera;
+        if (viewIndex >= 0 && viewIndex < this.#views.length)
+            return this.#views[viewIndex].camera;
+
+        return null;
+    }
+
+    setViewCamera(viewIndex, camera) {
+        if(viewIndex >= 0 && viewIndex < this.#views.length){
+            this.#views[viewIndex].camera = camera;
+
+            if(camera instanceof THREE.PerspectiveCamera) {
+                this.#views[viewIndex].fov = camera.fov;
+            }
+            else if(camera instanceof THREE.OrthographicCamera) {
+                this.#views[viewIndex].fov = "ortho";
+                this.#views[viewIndex].vDist = camera.top - camera.bottom;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     getViewOrthoMode(viewIndex) {
-        return this.views[viewIndex].orthoMode;
+        return this.#views[viewIndex].orthoMode;
     }
 
     swapViewIfOrtho(viewIndex, frustumFarPlane) {
-        const view = this.views[viewIndex];
+        const view = this.#views[viewIndex];
         if(view.fov != "ortho") {
             return false;
         }
@@ -334,7 +368,7 @@ export class ViewManager {
     normalizePointerToView(mousePos, viewIndex) {
         // Throw an exception if the specified view index is not within the bounds of 
         // the view array
-        if(viewIndex < 0 || viewIndex >= this.views.length)
+        if(viewIndex < 0 || viewIndex >= this.#views.length)
         {
             throw new Error('Specified \'viewIndex\' is out of bounds: ' + viewIndex);
         }
@@ -342,7 +376,7 @@ export class ViewManager {
         // Otherwise, the position within the specified view's sub-window must be
         // computed.
 
-        const view = this.views[viewIndex];
+        const view = this.#views[viewIndex];
         const rect = view.renderer.domElement.getBoundingClientRect();
 
         const mouseViewX = (mousePos.x - rect.left) / rect.width * 2 - 1;
@@ -356,14 +390,14 @@ export class ViewManager {
             return;
         }
         
-        const view = this.views[viewIndex];
+        const view = this.#views[viewIndex];
     
         if(view.controllable)
             view.cameraControls.enabled = enabled;
     }
     
     #getViewRenderArea(viewIndex) {
-        return document.getElementById(this.views[viewIndex].name);
+        return document.getElementById(this.#views[viewIndex].name);
     }
     
     #updateViewCamera(viewIndex, viewWidth, viewHeight) {
@@ -371,7 +405,7 @@ export class ViewManager {
         if(viewWidth <= 0 || viewHeight <= 0)
             return;
         
-        const view = this.views[viewIndex];
+        const view = this.#views[viewIndex];
         const camera = view.camera;
 
         const aspect = (viewWidth) / (viewHeight);
@@ -389,7 +423,7 @@ export class ViewManager {
     }
 
     #updateViewSize(viewIndex) {
-        const view = this.views[viewIndex];
+        const view = this.#views[viewIndex];
         const viewContainer = this.#getViewRenderArea(viewIndex);
         const renderer = view.renderer;
 
@@ -410,7 +444,7 @@ export class ViewManager {
             return;
         }
 
-        for(let i = 0; i < this.views.length; ++i) {
+        for(let i = 0; i < this.#views.length; ++i) {
             this.#updateViewSize(i);
         }
     }

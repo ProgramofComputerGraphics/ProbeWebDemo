@@ -21,11 +21,36 @@
 					<div class="submenu-label" id="frustumControlsLabel">
 						Frustum
 					</div>
-					<div class="submenu" id="fovControls">
+					<div class="submenu" id="frustumControls">
 						<div class="submenu-item">
-							<label for="fovSlider"> Field of View (FOV): </label>
-							<input type="number" id="fovEntry" min="0.1" max="179.9" value="45" title="FOV (in degrees)" class="standard-number">
-							<input type="range" id="fovSlider" min="1" max="179" step="1" value="45" class="standard-slider">
+							<label for="projectionDropdown"> Projection Type: </label>
+							<select id="projectionDropdown">
+								<option value="perspective">Perspective</option>
+								<option value="ortho">Parallel (Axonometric)</option>
+							</select>
+						</div>
+						<div id="perspectiveFrustumControls">
+							<div class="subsubmenu-item">
+								<label for="fovSlider"> Field of View (FOV): </label>
+								<input type="number" id="fovEntry" min="0.1" max="179.9" value="45" title="FOV (in degrees)" class="standard-number">
+								<input type="range" id="fovSlider" min="1" max="179" step="1" value="45" class="standard-slider">
+							</div>
+						</div>
+						<div class="hidden" id="orthoFrustumControls">
+							<div class="subsubmenu-item">
+								<label for="orthoSideSlider"> Frustum Side Length: </label>
+								<input type="number" id="orthoSideEntry" min="0" max="10" value="5" title="Ortho Side Length" class="standard-number">
+								<input type="range" id="orthoSideSlider" min="0" max="10" step="0.1" value="5" class="standard-slider">
+							</div>
+						</div>
+						<br>
+						<div class="submenu-item">
+							<label for="nearEntry"> Near Plane: </label>
+							<input type="number" id="nearEntry" min="0.001" max="20" value="1" title="Near Plane" class="standard-number">
+						</div>
+						<div class="submenu-item">
+							<label for="farEntry"> Far Plane: &nbsp; </label>
+							<input type="number" id="farEntry" min="0.001" max="20" value="10" title="Near Plane" class="standard-number">
 						</div>
 					</div>
 
@@ -60,13 +85,13 @@
 						<div class="view-render-area" id="realView"></div>
 					</div>
 	
-					<!-- Perspective View Elements -->
-					<div class="individual-view-container" id="perspViewContainer">	
+					<!-- Camera View Elements -->
+					<div class="individual-view-container" id="cameraViewContainer">	
 						<div class="view-header"> 
-							<label class="header-label"> Perspective View </label>
-							<button class="header_button" id="perspViewButton" onclick="onFullscreenButtonPressed('perspView')"> Fullscreen </button>
+							<label class="header-label"> Camera View </label>
+							<button class="header_button" id="cameraViewButton" onclick="onFullscreenButtonPressed('cameraView')"> Fullscreen </button>
 						</div>
-						<div class="view-render-area" id="perspView"></div>
+						<div class="view-render-area" id="cameraView"></div>
 					</div>
 	
 					<!-- Orthographic View Elements -->

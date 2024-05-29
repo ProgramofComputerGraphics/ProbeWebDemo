@@ -137,12 +137,28 @@ export class ProbeScene {
         );  
     }
 
+    getProjectionMode() {
+        return this.#frustum.getProjection();
+    }
+
+    setProjectionMode(newMode) {
+        return this.#frustum.setProjection(newMode);
+    }
+
     getFOV() {
         return this.#frustum.getFOV();
     }
 
     setFOV(fov) {
         this.#frustum.setFOV(fov);
+    }
+
+    getOrthoSideLength() {
+        return this.#frustum.getOrthoSideLength();
+    }
+
+    setOrthoSideLength(newLength) {
+        this.#frustum.setOrthoSideLength(newLength);
     }
 
     getNearPlane() {
@@ -158,7 +174,7 @@ export class ProbeScene {
     }
 
     setFarPlane(far) {
-        this.#frustum.setFarPlane(far);
+        this.#frustum.setFar(far);
     }
 
     setShadingMode(mode) {    
@@ -353,7 +369,7 @@ export class ProbeScene {
             if(showFrustum) {
                 this.#frustum.addFrustumToScene(this.#realScene, null, linesOnly);
             }
-
+            
             renderer.render(this.#realScene, camera);
 
             if(showFrustum) {

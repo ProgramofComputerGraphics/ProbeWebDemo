@@ -4,10 +4,7 @@ import { deepCopyMeshOrLine } from './utils.js';
 
 const frustumSideLineMaterial = new THREE.LineBasicMaterial({color : 0xa0a0a0});
 const nearPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0x4040e0});
-const farPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0xe04040,
-    depthTest: false,
-  depthWrite: false // Disable depth writing
-});
+const farPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0xe04040});
 
 const nearPlaneSurfaceMaterial = new THREE.MeshBasicMaterial({color : 0x4040e0,
                                                             transparent: true,
@@ -53,7 +50,7 @@ export class Frustum {
         // Set default values
         this.#projection = "perspective";
         this.#perspFOV = 45;
-        this.#orthoSideLength = 10;
+        this.#orthoSideLength = 5;
         this.#near = 1;
         this.#far = 10;
 
@@ -246,7 +243,7 @@ export class Frustum {
         // Compute the X/Y Distance from the center of the frustum to the inner
         // corners. This value is used to create the near-plane frustum vertices. 
         const frustumNearXandY = frustumSlope * this.#near;
-    
+
         let plane = this.#createPlaneHelper(this.#perspectiveNearPlaneLines, 
                                 frustumNearXandY, this.#near, 
                                 nearPlaneLineMaterial, 
@@ -348,7 +345,7 @@ export class Frustum {
                                             farPlaneLineMaterial, 
                                             farPlaneSurfaceMaterial);
 
-        this.#orthoNearPlaneSurface = plane;
+        this.#orthoFarPlaneSurface = plane;
     }
 
     #updatePerspectiveCamera() {
@@ -359,6 +356,7 @@ export class Frustum {
         this.#perspectiveCamera.position.set(0,0,0);
         this.#perspectiveCamera.lookAt(0,0,1); 
         this.#perspectiveCamera.updateMatrixWorld(); 
+        this.#perspectiveCamera.updateProjectionMatrix();
     }
 
     #updateOrthoCamera() {
@@ -373,9 +371,10 @@ export class Frustum {
         this.#orthoCamera.position.set(0,0,0);
         this.#orthoCamera.lookAt(0,0,1); 
         this.#orthoCamera.updateMatrixWorld(); 
+        this.#orthoCamera.updateProjectionMatrix();
     }
 
-    #updateFrustum(mode) {
+    #updateFrustum(mode) {        
         // TODO: Possibly handle non-null cases that don't match the intended options
         if(mode == null || mode == "both")
             mode = "all";
@@ -420,8 +419,8 @@ export class Frustum {
     }
 
     setFOV(newFOV) {
-        this.#perspFOV = newFOV;
-        this.#updateFrustum("perpsective");
+        this.#perspFOV = parseFloat(newFOV);
+        this.#updateFrustum("perspective");
     }
 
     getOrthoSideLength() {
@@ -438,7 +437,7 @@ export class Frustum {
     }
 
     setNear(newNear) {
-        this.#near = newNear;
+        this.#near = parseFloat(newNear);
         this.#updateFrustum("all");
     }
 
@@ -446,8 +445,8 @@ export class Frustum {
         return this.#far;
     }
 
-    setNear(newFar) {
-        this.#far = newFar;
+    setFar(newFar) {
+        this.#far = parseFloat(newFar);
         this.#updateFrustum("all");
     }
 
@@ -474,7 +473,13 @@ export class Frustum {
         }
 
         obj.geometry.attributes.position.needsUpdate = true;
-        obj.geometry.computeBoundingSphere();
+        try {
+            obj.geometry.computeBoundingSphere();   
+        }
+        catch(error) {
+            console.error(error);
+            console.log(obj);
+        }
     }
 
     addFrustumToScene(scene, mode, linesOnly) {
@@ -573,9 +578,24 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoNearPlaneLines);
 
+            // Distort Far Plane
+            this.#addDistortedLineGroup(distortedFrustum, 
+                                        this.#orthoFarPlaneLines);
+
             if(!linesOnly){
-                const distortedPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
-                distortedFrustum.add(distortedPlane);
+                const distortedNearPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
+                this.applyFrustumDistortionToObject(distortedNearPlane);
+
+                distortedNearPlane.position.set(0,0,0);
+
+                distortedFrustum.add(distortedNearPlane);
+
+                const distortedFarPlane = deepCopyMeshOrLine(this.#orthoFarPlaneSurface);
+                this.applyFrustumDistortionToObject(distortedFarPlane);
+
+                distortedFarPlane.position.set(0,0,0);
+
+                distortedFrustum.add(distortedFarPlane);
             }
         }
 
