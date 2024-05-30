@@ -21,6 +21,9 @@ flipX.set( -1,0,0,0,
             0,0,1,0,
             0,0,0,1 );
 
+            
+let testBoolean = true;
+
 export class Frustum {
     #projection;
     
@@ -34,10 +37,14 @@ export class Frustum {
 
     #perspectiveTipLines;
     #perspectiveSideLines;
+    
     #perspectiveNearPlaneLines;
     #perspectiveNearPlaneSurface;
+    #perspectiveNearPlane;
+
     #perspectiveFarPlaneLines;
     #perspectiveFarPlaneSurface;
+    #perspectiveFarPlane;
 
     #orthoSideLines;
     #orthoNearPlaneLines;
@@ -57,12 +64,24 @@ export class Frustum {
         // Create geometry groups
         this.#perspectiveSideLines = new THREE.Group();
         this.#perspectiveTipLines = new THREE.Group();
+
         this.#perspectiveNearPlaneLines = new THREE.Group();
         this.#perspectiveFarPlaneLines = new THREE.Group();
+
+        this.#perspectiveNearPlane = new THREE.Group();
+        this.#perspectiveFarPlane = new THREE.Group();
 
         this.#orthoSideLines = new THREE.Group();
         this.#orthoNearPlaneLines = new THREE.Group();
         this.#orthoFarPlaneLines = new THREE.Group();
+
+        // Add clickable property to near/far planes
+        this.#perspectiveNearPlane.userData.clickable = true;
+        this.#perspectiveFarPlane.userData.clickable = true;
+
+        // Add gumball constraints to near/far planes
+        this.#perspectiveNearPlane.userData.onlyTranslateZ = true;
+        this.#perspectiveFarPlane.userData.onlyTranslateZ = true;
 
         // Generate frustum geometry
         this.#updateFrustum("all");
@@ -250,6 +269,11 @@ export class Frustum {
                                 nearPlaneSurfaceMaterial);
 
         this.#perspectiveNearPlaneSurface = plane;
+
+        // Update overall near plane group
+        this.#perspectiveNearPlane.clear();
+        this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneLines);
+        this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneSurface);
     }
 
     #updatePerspectiveFarPlane() {
@@ -269,6 +293,11 @@ export class Frustum {
                                             farPlaneSurfaceMaterial);
 
         this.#perspectiveFarPlaneSurface = plane;
+
+        // Update overall far plane group
+        this.#perspectiveFarPlane.clear();
+        this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneLines);
+        this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneSurface);
     }
 
     #updateOrthoFrustumSideLines() {
@@ -472,6 +501,10 @@ export class Frustum {
             positionAttribute.setXYZ(i, vertex.x, vertex.y, (vertex.z + 1)/2); 
         }
 
+        obj.position.set(0,0,0);
+        obj.rotation.set(0,0,0,"XYZ");
+        obj.scale.set(1,1,1);
+        
         obj.geometry.attributes.position.needsUpdate = true;
         try {
             obj.geometry.computeBoundingSphere();   

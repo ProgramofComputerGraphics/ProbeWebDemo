@@ -1,20 +1,24 @@
-import { ProbeScene } from './scene.js'
-
-import { ViewManager } from './views.js';
 import { initControls } from './controls.js';
+import { InputManager } from './input.js';
+import { ProbeScene } from './scene.js'
+import { ViewManager } from './views.js';
 
-
-// Create variable for the view manager
-let viewManager;
 
 // Create variable for the scene
 let probeScene;
 
+// Create variable for the view manager
+let viewManager;
+
+// Create variable for the input manager
+let inputManager;
 
 function init() {
 	probeScene = new ProbeScene();
 	
 	viewManager = new ViewManager(probeScene);
+
+	inputManager = new InputManager(probeScene, viewManager);
 
 	// Get the perspective view
 	const cameraView = viewManager.getViewByName("cameraView");
@@ -22,8 +26,6 @@ function init() {
 	initControls(probeScene, viewManager, cameraView);
 
 	window.addEventListener('resize', onWindowResize);
-	window.addEventListener('mousedown', onMouseDown);
-	window.addEventListener('pointermove', onPointerMove);
 }
 
 window.onFullscreenButtonPressed = function(viewName) {
@@ -64,15 +66,6 @@ window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
 
 function onWindowResize() {
 	viewManager.updateViewSizes();
-}
-
-// Modified from https://threejs.org/docs/index.html?q=ray#api/en/core/Raycaster
-function onPointerMove(event) {
-	
-}
-
-function onMouseDown(event) {
-	
 }
 
 // Modified from https://threejs.org/examples/webgl_multiple_views

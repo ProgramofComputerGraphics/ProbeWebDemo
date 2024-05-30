@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 import { Frustum } from './frustum.js';
+import { pointInRectangle } from './utils.js';
 
 const orthoPadding = 0.25;
 
@@ -91,9 +92,6 @@ export class ViewManager {
             // Set up the renderer for each view
             this.#initRenderer(view);
 
-            // Set up mouse listener for each view
-            this.#initMousePressListener(view, ii);
-
             // Initialize camera controls if view is controllable
             this.#initCameraControls(view);
         }
@@ -181,28 +179,6 @@ export class ViewManager {
         view.cameraControls = cameraControls;
     }
 
-    #initMousePressListener(view, viewIndex) {
-        const viewRenderCanvas = document.getElementById(view.name + "Canvas");
-
-        // If the canvas isn't found, print an error and end the method.
-        if(viewRenderCanvas == null) {
-            console.error("Error: Render canvas could not be found for " + view.name);
-            return;
-        }
-
-        viewRenderCanvas.addEventListener("click", (event) => {
-            this.#onMouseClicked(view, viewIndex, event);
-        });
-
-    }
-
-    #onMouseClicked(view, viewIndex, mouseEvent) {
-        const mousePos = new THREE.Vector2(mouseEvent.clientX, mouseEvent.clientY);
-        const pointer = this.normalizePointerToView(mousePos, viewIndex);
-
-        this.#probeScene.clickScene(pointer, view, viewIndex);
-    }
-
     getViewData() {
         return this.#views;
     }
@@ -259,35 +235,33 @@ export class ViewManager {
         return false;
     }
 
-    getHoveredView(pointer) {
-        // Convert pointer from [-1,1] range to [0,1] range
-        const zeroOnePointerX = (pointer.x + 1) / 2;
-        const zeroOnePointerY = (pointer.y + 1) / 2;
     
+    getViewArea(viewIndex) {
+        const view = this.#views[viewIndex];
+
+        return document.getElementById(view.name).getBoundingClientRect();
+    }
+
+    getHoveredView(mouseCoords) {   
+        // If a view is set to fullscreen, only check the active view 
         if (this.#activeView != -1) {
-            if(zeroOnePointerX < 0 || zeroOnePointerX >= 1)
-                return -1;
+            const viewRect = this.getViewArea(this.#activeView);
             
-            if(zeroOnePointerY < 0 || zeroOnePointerY >= 1)
-                return -1;
-    
-            return this.#activeView;
+            // TODO - Check for boundary edge cases (reversed y-direction could mess things up)
+            return pointInRectangle(mouseCoords, viewRect) ? this.#activeView : -1;
         }
     
-        // Check each view to see if the pointer position is within the view's window
+        // Otherwise, check each view to see if the pointer position is within the view's window
         for(let i = 0; i < this.#views.length; ++i) {
-            const view = this.#views[i];
-    
-            if(view.left <= zeroOnePointerX && 
-                zeroOnePointerX < view.left + view.width) {
-                
-                if(view.bottom <= zeroOnePointerY && 
-                    zeroOnePointerY < view.bottom + view.height) {
-                    return i;
-                }
+            const viewRect = this.getViewArea(i);
+            
+            // TODO - Check for boundary edge cases (reversed y-direction could mess things up)
+            if(pointInRectangle(mouseCoords, viewRect)) {
+                return i;
             }
         }
     
+        // If mouse is not within any view, return -1
         return -1;
     }
 
@@ -299,12 +273,6 @@ export class ViewManager {
         }
     
         return -1;
-    }
-
-    getViewArea(viewIndex) {
-        const view = this.#views[viewIndex];
-
-        return document.getElementById(view.name).getBoundingClientRect();
     }
 
     getViewAspect(viewIndex) {
