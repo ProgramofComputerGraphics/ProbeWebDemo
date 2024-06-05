@@ -92,6 +92,8 @@ body {
 .view-render-area{
     flex: 1 1 auto;
     border: solid 2px rgb(255, 255, 255);
+    align-content: center;
+    align-items: center;
 }
 
 .render-canvas {
@@ -150,6 +152,21 @@ body {
     margin-left: 30px;
     padding-top: 2px; 
     padding-bottom: 2px;
+}
+
+.submenu-button
+{
+    width: 100px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.submenu-button-clicked
+{
+    background-color: #a0a0a0;
+    width: 100px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .shadertext

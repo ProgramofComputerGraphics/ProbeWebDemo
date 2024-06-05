@@ -122,6 +122,51 @@ function initFarPlaneEntry(probeScene) {
 }
 
 
+// Transformation Functions
+function initTransformResetButton(probeScene) {
+    const transformResetButton = document.getElementById("transformResetButton");
+    
+    transformResetButton.addEventListener("click", () => {
+        probeScene.resetObjectTransform();
+    });
+
+    console.log("Reset Clicked!");
+}
+
+function initTransformWidgetButtons(probeScene, viewManager) {
+    const translateButton = document.getElementById("translateButton");
+    const rotateButton = document.getElementById("rotateButton");
+    const scaleButton = document.getElementById("scaleButton");
+
+    let setGumballModeToTranslate = (event) => {
+        translateButton.className = "submenu-button-clicked";
+        rotateButton.className = "submenu-button";
+        scaleButton.className = "submenu-button";
+
+        probeScene.setGumballMode("translate");
+    }
+
+    let setGumballModeToRotate = (event) => {
+        translateButton.className = "submenu-button";
+        rotateButton.className = "submenu-button-clicked";
+        scaleButton.className = "submenu-button";
+
+        probeScene.setGumballMode("rotate");
+    }
+
+    let setGumballModeToScale = (event) => {
+        translateButton.className = "submenu-button";
+        rotateButton.className = "submenu-button";
+        scaleButton.className = "submenu-button-clicked";
+
+        probeScene.setGumballMode("scale");
+    }
+
+    translateButton.addEventListener("click", setGumballModeToTranslate);
+    rotateButton.addEventListener("click", setGumballModeToRotate);
+    scaleButton.addEventListener("click", setGumballModeToScale);
+}
+
 // Shading Functions
 
 function initShadingModeDropdown(probeScene) {
@@ -129,6 +174,14 @@ function initShadingModeDropdown(probeScene) {
     
     shadingDropdown.addEventListener("change", () => { 
         probeScene.setShadingMode(shadingDropdown.value); 
+    });
+}
+
+function initMaterialDoubleSidedCheckbox(probeScene) {
+    const doubleSidedCheckbox = document.getElementById("shadingDoubleSidedCheckbox");
+
+    doubleSidedCheckbox.addEventListener("change", () => {
+        probeScene.setShadingDoubleSided(doubleSidedCheckbox.checked);
     });
 }
 
@@ -152,8 +205,13 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     initNearPlaneEntry(probeScene, viewManager, cameraViewIndex);
     initFarPlaneEntry(probeScene, viewManager, cameraViewIndex);
 
+    // Transform Controls
+    initTransformResetButton(probeScene);
+    initTransformWidgetButtons(probeScene, viewManager);
+
     // Shading Controls
     initShadingModeDropdown(probeScene);
+    initMaterialDoubleSidedCheckbox(probeScene);
     initShadingColorSelect(probeScene);
     
 }

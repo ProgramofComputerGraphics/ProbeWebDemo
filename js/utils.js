@@ -1,6 +1,6 @@
 export function pointInRectangle(point, rectangle) {
     const containsX = point.x >= rectangle.x && point.x < rectangle.x + rectangle.width;
-    const containsY = point.y >= rectangle.y && point.y < rectangle.y + rectangle.width;
+    const containsY = point.y >= rectangle.y && point.y < rectangle.y + rectangle.height;
 
     return containsX && containsY;
 }

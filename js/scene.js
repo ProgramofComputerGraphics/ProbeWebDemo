@@ -41,24 +41,32 @@ export class ProbeScene {
         this.#objectDefaultRotation = new THREE.Vector3(0,0,0);
         this.#objectDefaultScale = new THREE.Vector3(1,1,1);
 
-        this.#standardMaterial = new THREE.MeshStandardMaterial({color : 0xffffff,
-                                                            metalness : 0,
-                                                            roughness : 1,
-                                                            envMapIntensity : 0,
-                                                            lightMapIntensity: 0,
-                                                            flatShading : true,
-                                                            side : THREE.DoubleSide});
-        this.#normalMaterial = new THREE.ShaderMaterial({
-            side : THREE.DoubleSide,
-            vertexShader: loadFile("shaders/normalVertexShader.vs"),
-            fragmentShader: loadFile("/shaders/normalFragmentShader.fs")
+        this.#standardMaterial = new THREE.MeshStandardMaterial({
+            color : 0xffffff,
+            metalness : 0,
+            roughness : 1,
+            envMapIntensity : 0,
+            lightMapIntensity: 0,
+            flatShading : true,
+            side : THREE.DoubleSide
         });
+
+        this.#normalMaterial = new THREE.ShaderMaterial({
+            clipping : true,
+            side : THREE.DoubleSide,
+            vertexShader : loadFile("shaders/normalVertexShader.vs"),
+            fragmentShader : loadFile("/shaders/normalFragmentShader.fs")
+        });
+        this.#normalMaterial.extensions.clipCullDistance = true;
 
         this.#objMaterial = this.#standardMaterial;
 
         this.#objShadingMode = "flat";
 
         this.#frustum = new Frustum();
+
+        // Enables the appropriate layers depending on the frustum's starting projection
+        this.setProjectionMode(this.#frustum.getProjection());
 
         this.#gumball = null;
         this.#gumballView = -1;
@@ -87,6 +95,8 @@ export class ProbeScene {
 
     #initRealWorldScene() {
         this.#realScene = new THREE.Scene();
+
+        this.#frustum.addFrustumToScene(this.#realScene);
 
         initSceneLights(this.#realScene);
     }
@@ -172,7 +182,18 @@ export class ProbeScene {
     }
 
     setProjectionMode(newMode) {
-        return this.#frustum.setProjection(newMode);
+        const validMode = this.#frustum.setProjection(newMode);
+        if(!validMode)
+            return validMode;
+
+        if(newMode == "ortho"){
+            raycaster.layers.disable(Frustum.PERSPECTIVE_FRUSTUM_LAYER);
+            raycaster.layers.enable(Frustum.ORTHO_FRUSTUM_LAYER);
+        }
+        else if(newMode == "perspective"){
+            raycaster.layers.enable(Frustum.PERSPECTIVE_FRUSTUM_LAYER);
+            raycaster.layers.disable(Frustum.ORTHO_FRUSTUM_LAYER);
+        }
     }
 
     getFOV() {
@@ -217,7 +238,8 @@ export class ProbeScene {
                 mesh.material = this.material;
             }
             catch(error) {
-                console.log("Non-mesh element encountered during material update; scene material cannot be applied!");
+                console.log("Non-mesh element encountered during material update; " +
+                            "scene material cannot be applied!");
             }
         });
     }
@@ -258,6 +280,14 @@ export class ProbeScene {
         this.#objMaterial.needsUpdate = true;
     }
 
+    setShadingDoubleSided(doubleSided) {
+        this.#standardMaterial.side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+        this.#normalMaterial.side = doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+        
+        this.#standardMaterial.needsUpdate = true;
+        this.#normalMaterial.needsUpdate = true;
+    }
+
     setObjectColor(color) {
         this.#objMaterial.color = new THREE.Color(color);
         if(this.#objShadingMode == "wire") {
@@ -281,19 +311,6 @@ export class ProbeScene {
         // Create a new transform control widget
         this.#gumball = new TransformControls(view.camera, view.renderer.domElement);
 
-        // Set gumball mode/apply contraints
-        if(object.userData.onlyTranslateZ) {
-            this.#gumball.mode = "translate";
-            this.#gumball.showX = false;
-            this.#gumball.showY = false;
-        }
-        else {
-            this.#gumball.mode = this.#gumballMode;
-        }
-
-        // Make gumball clickable
-        this.#gumball.userData.clickable = true;
-
         // Add mousedown/up event handling
         this.#gumball.addEventListener("mouseDown", (event) => {
             if(view.cameraControls != null)
@@ -306,6 +323,47 @@ export class ProbeScene {
 
         // Attach it to the clicked object 
         this.#gumball.attach(object);
+
+        // Set gumball mode/apply contraints
+        if(object.userData.nearPlane) {
+            this.#gumball.mode = "translate";
+            this.#gumball.showX = false;
+            this.#gumball.showY = false;
+            this.#gumball.userData.onlyTranslate = true;
+
+            this.#gumball.addEventListener("change", (event) => {
+                const z = object.position.z;
+                if(z > 0 && z < this.#frustum.getFar()){
+                    this.#frustum.setNear(z);
+                    const nearElement = document.getElementById("nearEntry");
+                    nearElement.value = z;
+                }
+                else {
+                    object.position.setZ(this.#frustum.getNear());
+                }
+            });
+        }
+        else if(object.userData.farPlane){
+            this.#gumball.mode = "translate";
+            this.#gumball.showX = false;
+            this.#gumball.showY = false;
+            this.#gumball.userData.onlyTranslate = true;
+
+            this.#gumball.addEventListener("change", (event) => {
+                const z = object.position.z;
+                if(z > this.#frustum.getNear()) {
+                    this.#frustum.setFar(z);
+                    const farElement = document.getElementById("farEntry");
+                    farElement.value = z;
+                }
+                else {
+                    object.position.setZ(this.#frustum.getFar());
+                }
+            });
+        }
+        else {
+            this.#gumball.mode = this.#gumballMode;
+        }
 
         // Add gumball to scene
         this.#realScene.add(this.#gumball);
@@ -352,7 +410,7 @@ export class ProbeScene {
 
         this.#gumballMode = mode;
 
-        if(this.#gumball != null){
+        if(this.#gumball != null && !this.#gumball.userData.onlyTranslate){
             this.#gumball.mode = mode;
         }
     }
@@ -389,6 +447,19 @@ export class ProbeScene {
                                     this.#objectDefaultRotation.z,
                                     "XYZ");
         this.#object.scale.copy(this.#objectDefaultScale);
+    }
+
+    #setCameraLayers(camera) {
+        const mode = this.getProjectionMode();
+
+        if(mode == "ortho"){
+            camera.layers.disable(Frustum.PERSPECTIVE_FRUSTUM_LAYER);
+            camera.layers.enable(Frustum.ORTHO_FRUSTUM_LAYER);
+        }
+        else if(mode == "perspective"){
+            camera.layers.enable(Frustum.PERSPECTIVE_FRUSTUM_LAYER);
+            camera.layers.disable(Frustum.ORTHO_FRUSTUM_LAYER);
+        }
     }
 
     #getDistortedObject() {
@@ -433,29 +504,25 @@ export class ProbeScene {
         if(this.#gumballView == viewIndex)
             this.#gumball.visible = true;
      
+        
+        this.#frustum.setLinesOnly(linesOnly);
 
-        // If rendering the real scene, optionally add the frustum and then 
-        // render the scene
+        // Set camera layers
+        this.#setCameraLayers(camera);
+
+        // If rendering the real scene, just render the scene
         if(!imagespace) {
-            if(showFrustum) {
-                this.#frustum.addFrustumToScene(this.#realScene, null, linesOnly);
-            }
-
             renderer.render(this.#realScene, camera);
-
-            if(showFrustum) {
-                this.#frustum.removeFrustumFromScene(this.#realScene);
-            }
         }
-        // If rendering the image space scene, apply the perspective distortion
-        // and then render the scene
+        // If rendering the image space scene, create the perspective distorted
+        // geometry and then render the scene
         else {
             const distortedObj = this.#getDistortedObject();
             this.#imageSpaceScene.add(distortedObj);
     
             if(showFrustum) {
                 this.#frustum.addDistortedFrustumToScene(this.#imageSpaceScene, 
-                                                            null, linesOnly);
+                                                            null);
             }
     
             renderer.render(this.#imageSpaceScene, camera);

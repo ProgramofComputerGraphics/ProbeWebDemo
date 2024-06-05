@@ -10,7 +10,7 @@
 			Probe Web Demo
 		</div>
 		<div class="container">
-			<div class="controls-section">
+			<div class="controls-section" id="controlsSection">
 				<div class="menu-label" id="controlsLabel">
 					Controls
 				</div>
@@ -54,11 +54,27 @@
 						</div>
 					</div>
 
+					<!-- Transformation Controls -->
+					<div class="submenu-label" id="transformationControlsLabel">
+						Transformation <br> Widget
+					</div>
+					<div class="submenu" id="transformationControls">
+						<div class="submenu-item">
+							<button class="submenu-button" id="transformResetButton"> Reset (Q) </button>
+							<br>
+							<button class="submenu-button-clicked" id="translateButton"> Translate (W) </button>
+							<br>
+							<button class="submenu-button" id="rotateButton"> Rotate (E) </button>
+							<br>
+							<button class="submenu-button" id="scaleButton"> Scale (R) </button>
+						</div>
+					</div>
+
 					<!-- Shading Controls -->
-					<div class="submenu-label" id="frustumControlsLabel">
+					<div class="submenu-label" id="shadingControlsLabel">
 						Shading
 					</div>
-					<div class="submenu" id="fovControls">
+					<div class="submenu" id="shadingControls">
 						<div class="submenu-item">
 							<label for="shadingDropdown"> Shading Mode: </label>
 							<select id="shadingDropdown">
@@ -69,13 +85,17 @@
 							</select>
 						</div>
 						<div class="submenu-item">
+							<label for="shadingDoubleSidedCheckbox">Double-Sided Material:</label>
+							<input type='checkbox' id="shadingDoubleSidedCheckbox" class="checkbox" checked>
+						</div>
+						<div class="submenu-item">
 							<label for="colorpickObjColor">Object Color:</label>
 							<input type='color' id="colorpickObjColor"  class="colorpicker" value="#FFFFFF">
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="render-section">
+			<div class="render-section" id="renderSection">
 				<div class="overall-views-container" id="viewsContainer">
 					<!-- Real World View Elements -->
 					<div class="individual-view-container" id="realViewContainer">	

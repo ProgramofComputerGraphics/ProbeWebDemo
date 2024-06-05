@@ -1,8 +1,11 @@
 import * as THREE from "three";
+import { pointInRectangle } from "./utils.js";
 
 const LMB = 0;
 const MMB = 1;
 const RMB = 2;
+
+const DRAG_DELTA_THRESHOLD_SQ = 20;
 
 export class InputManager {
     #probeScene;
@@ -38,6 +41,54 @@ export class InputManager {
         window.addEventListener("keyup", (event) => { this.keyUp(event) });
     }
 
+    #checkIfAncestor(potentialAncestor, object) {
+        // If the object is not an Object3D, return null immediately 
+        // as it is an invalid input
+        if(!(object instanceof THREE.Object3D)) {
+            return null;
+        }
+
+        let currentObj = object;
+
+        // Traverse up the scene hierarchy looking for a clickable object
+        while(!(currentObj == potentialAncestor)) {
+            // If we reach the scene root, return null
+            if(currentObj.parent == null) {
+                return null;
+            }
+
+            // Traverse up one level of the hierarchy
+            currentObj = currentObj.parent;
+        }
+
+        // Found a clickable object, so return it
+        return currentObj;
+    }
+
+    #findClickableAncestor(object) {
+        // If the object is not an Object3D, return null immediately 
+        // as it is an invalid input
+        if(!(object instanceof THREE.Object3D)) {
+            return null;
+        }
+
+        let currentObj = object;
+
+        // Traverse up the scene hierarchy looking for a clickable object
+        while(!currentObj.userData.clickable) {           
+            // If we reach the scene root, return null
+            if(currentObj.parent == null) {
+                return null;
+            }
+
+            // Traverse up one level of the hierarchy
+            currentObj = currentObj.parent;
+        }
+
+        // Found a clickable object, so return it
+        return currentObj;
+    }
+
     #getFirstHoveredObject(pointer, camera, imagespace){
         // Raycast into scene
         const intersects = this.#probeScene.raycastScene(pointer, 
@@ -53,15 +104,23 @@ export class InputManager {
             // Get closest intersection
             const closestIntersection = intersects.shift();
 
-            if(!(closestIntersection.object instanceof THREE.Object3D)) { 
-                continue;
-            }
-            
-            if(!closestIntersection.object.userData.clickable) {
+            // Skip any non-objects
+            if(!(closestIntersection.object instanceof THREE.Object3D)) {  
                 continue;
             }
 
-            return closestIntersection.object;
+            // Skip any line objects (TODO - Possibly Remove)
+            if(closestIntersection.object instanceof THREE.Line) {
+                continue;
+            }
+            
+            const clickableObj = this.#findClickableAncestor(closestIntersection.object);
+            
+            if(clickableObj == null) {
+                continue;
+            }
+
+            return clickableObj;
         }  
 
     }
@@ -72,16 +131,25 @@ export class InputManager {
                                                         camera, 
                                                         imagespace);
 
+        // Check if intersected objects are children of the target object
         for(let i = 0; i < intersects.length; ++i) {
-            if(intersects[i].object == object)
+            if(this.#checkIfAncestor(object, intersects[i].object))
                 return true;
         }
 
+        // If none of the intersected objects are children of the taget, return false
         return false;
     }
 
+    #checkIfMouseIsInControls(mousePos) {
+        const controlsElement = document.getElementById("controlsSection");
+        const controlsRect = controlsElement.getBoundingClientRect();
+        
+        return pointInRectangle(mousePos, controlsRect);
+    }
+
     mouseDown(mouseEvent) {
-        // Get raw mouse position within client
+        // Get relevant mouse event details
         const mousePos = new THREE.Vector2(mouseEvent.clientX, mouseEvent.clientY);
         const mouseButton = mouseEvent.button;
 
@@ -117,21 +185,43 @@ export class InputManager {
     }
 
     mouseUp(mouseEvent) {
-        // Get raw mouse position within client
+        // Get relevant mouse event details
         const mousePos = new THREE.Vector2(mouseEvent.clientX, mouseEvent.clientY);
         const mouseButton = mouseEvent.button;
+
+        if(this.#checkIfMouseIsInControls(mousePos)) {
+            this.#clearMouseEvent(mouseButton);
+            return;
+        }
 
         // Get hovered view
         const viewIndex = this.#viewManager.getHoveredView(mousePos);
         const viewData = this.#viewManager.getViewData()[viewIndex];
 
+        // Get the mouse down event corresponding to this mouse-up event
+        const mouseDownEvent = this.#mouseDownEvents[mouseButton];
+
+        // If the mouse down event cannot be found, end mouse up early
+        if(mouseDownEvent == null) {
+            this.#gumballActive = false;
+            this.#clearMouseEvent(mouseButton);
+            return;
+        }
+
+        // Compute mouse displacement
+        const mouseDelta = new THREE.Vector2(mousePos.x - mouseDownEvent.clientX,
+                                            mousePos.y - mouseDownEvent.clientY);
+
         switch(mouseButton){
             case LMB:
-                if(this.#gumballActive) {
+                // If the gumball was actively used during this mouse press, or if the mouse was 
+                // dragged a large enough distance, keep the gumball active and return early
+                if(this.#gumballActive || mouseDelta.lengthSq() >= DRAG_DELTA_THRESHOLD_SQ) {
                     this.#gumballActive = false;
                     this.#clearMouseEvent(mouseButton);
                     return;
                 }
+
                 // If the current view isn't the same as the mouse down view, 
                 // no object should be clicked
                 if(viewIndex != this.#mouseDownViews[mouseButton] || viewIndex == -1) {
@@ -156,10 +246,12 @@ export class InputManager {
                 const gumball = this.#probeScene.clickObject(this.#mouseDownObjects[mouseButton], 
                                                             viewData, viewIndex);
 
-                gumball.addEventListener("mouseDown", (_) => {
-                    this.#gumballActive = true;
-                });
-
+                if(gumball != null) {
+                    gumball.addEventListener("mouseDown", (_) => {
+                        this.#gumballActive = true;
+                    });
+                }
+                
                 this.#gumballActive = false;
             
             default:
@@ -181,18 +273,31 @@ export class InputManager {
     keyUp(keyEvent) {
         const key = keyEvent.key;
 
+        const translateButton = document.getElementById("translateButton");
+        const rotateButton = document.getElementById("rotateButton");
+        const scaleButton = document.getElementById("scaleButton");
+
         switch(key){
             case "q":
                 this.#probeScene.resetObjectTransform();
                 break;
             case "w":
                 this.#probeScene.setGumballMode("translate");
+                translateButton.className = "submenu-button-clicked";
+                rotateButton.className = "submenu-button";
+                scaleButton.className = "submenu-button";
                 break;
             case "e":
                 this.#probeScene.setGumballMode("rotate");
+                translateButton.className = "submenu-button";
+                rotateButton.className = "submenu-button-clicked";
+                scaleButton.className = "submenu-button";
                 break;
             case "r":
                 this.#probeScene.setGumballMode("scale");
+                translateButton.className = "submenu-button";
+                rotateButton.className = "submenu-button";
+                scaleButton.className = "submenu-button-clicked";
                 break;
         }
         

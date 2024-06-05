@@ -10,9 +10,11 @@ const orthoPadding = 0.25;
 export class ViewManager {  
     #views;
     #activeView;
-    #probeScene;
+    #cameraOutlineScene;
+    #cameraOutlineCamera;
+    #cameraOutlineMaterial;
 
-    constructor(probeSceneArg) {
+    constructor() {
         
         // Initializes the four views:
         //  - Real World
@@ -58,6 +60,8 @@ export class ViewManager {
                 imagespace: false,
                 frustumLinesOnly: true,
                 gumball: false,
+                renderCameraOutline: true,
+                renderCameraOutlineColor: new THREE.Color("#ffffff"),
             },
             {
                 name: "imageView",
@@ -76,7 +80,6 @@ export class ViewManager {
 
         // Create variable for representing the currently active view
         this.#activeView = -1;
-        this.#probeScene = probeSceneArg;
         
         for (let ii = 0; ii < this.#views.length; ++ii) {
             const view = this.#views[ii];
@@ -95,6 +98,17 @@ export class ViewManager {
             // Initialize camera controls if view is controllable
             this.#initCameraControls(view);
         }
+
+        // Initialize the scene for camera outlines
+        this.#cameraOutlineScene = new THREE.Scene();
+
+        // Initialize the camera for camera outline (this is a separate camera)
+        this.#cameraOutlineCamera = new THREE.OrthographicCamera(-1,1,1,-1,-1,4);
+        this.#cameraOutlineCamera.position.set(0,0,2);
+        this.#cameraOutlineCamera.lookAt(0,0,0);
+
+        // Initialize the camera outline material
+        this.#cameraOutlineMaterial = new THREE.LineBasicMaterial();
     }
 
     #initViewCamera(view) {
@@ -143,7 +157,7 @@ export class ViewManager {
 
         // Set the renderer's DOM element's ID and class
         view.renderer.domElement.id = view.name + "Canvas";
-        view.renderer.domElement.class = "render-canvas";
+        view.renderer.domElement.className = "render-canvas";
 
         // Find the view's container div
         const viewContainer = document.getElementById(view.name);
@@ -395,11 +409,29 @@ export class ViewManager {
         const viewContainer = this.#getViewRenderArea(viewIndex);
         const renderer = view.renderer;
 
-        const viewWidth = viewContainer.clientWidth;
-        const viewHeight = viewContainer.clientHeight;
+        const canvasWidth = viewContainer.clientWidth;
+        const canvasHeight = viewContainer.clientHeight;
 
-        renderer.setSize(viewWidth, viewHeight);
-        renderer.setViewport(0, 0, viewWidth, viewHeight);
+        let viewWidth, viewHeight;
+
+        if(view.name == "cameraView") {
+            viewWidth = viewHeight = Math.min(canvasWidth, canvasHeight);
+            
+            const viewportLeft = (canvasWidth - viewWidth) / 2;
+            const viewportTop = (canvasHeight - viewHeight) / 2;
+
+            renderer.setSize(viewWidth, viewHeight);
+            renderer.setViewport(viewportLeft, viewportTop,
+                                viewWidth, viewHeight);
+        }
+        else {
+            viewWidth = viewContainer.clientWidth;
+            viewHeight = viewContainer.clientHeight;
+
+            renderer.setSize(viewWidth, viewHeight);
+            renderer.setViewport(0, 0, viewWidth, viewHeight);
+        }
+        
         renderer.setClearColor(view.background);
 
         this.#updateViewCamera(viewIndex, viewWidth, viewHeight);
@@ -415,5 +447,88 @@ export class ViewManager {
         for(let i = 0; i < this.#views.length; ++i) {
             this.#updateViewSize(i);
         }
+    }
+
+    renderCameraOutline(viewIndex) {
+        // Return early if view index is invalid
+        if(viewIndex < 0 || viewIndex >= this.#views.length)
+            return;
+
+        // Return early if view does not allow for camera outline
+        if(!this.#views[viewIndex].renderCameraOutline)
+            return;
+        
+        // Get the camera's aspect ratio (or the equivalent property for an orthographic camera)
+        const camera = this.getViewCamera(viewIndex);
+
+        let camAspect;
+        if(camera instanceof THREE.PerspectiveCamera) {
+            camAspect = camera.aspect;
+        }
+        else if(camera instanceof THREE.OrthographicCamera) {
+            camAspect = (camera.right - camera.left) / (camera.top - camera.bottom);
+        }
+        else {
+            return;
+        }  
+
+        // Get the view area's aspect ratio
+        const viewContainer = this.#getViewRenderArea(viewIndex);
+        const viewAreaAspect = viewContainer.clientWidth / viewContainer.clientHeight;
+
+        // More accurately an "aspect ratio ratio", this value is the ratio between
+        // the camera's aspect ratio and the view area's aspect ratio
+        const aspectRatioRatio = camAspect / viewAreaAspect;
+
+        const renderer = this.#views[viewIndex].renderer
+        
+        // Save existing render parameters
+        let tempAutoClear = renderer.autoClear;
+        renderer.autoClear = false;
+
+        let tempRenderViewport = new THREE.Vector4();
+        renderer.getViewport(tempRenderViewport);
+        
+        // Compute camera outline points
+        const cameraOutlinePoints = [];
+
+        // View area is proportionally wider than camera
+        if(viewAreaAspect >= camAspect) {
+            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, -0.9999, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, 0.9999, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(0.75, -0.9999, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(0.75, 0.9999, 1));
+        }
+        // View area is proportionally taller than camera
+        else {
+            cameraOutlinePoints.push(new THREE.Vector3(-1, -1/0.85, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(1, -1/0.85, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-1, 1/0.85, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(1, 1/0.85, 1));
+        }
+
+        console.log('Camera Position:', this.#cameraOutlineCamera.position);
+        console.log('Camera Near Plane:', this.#cameraOutlineCamera.near);
+        console.log('Camera Far Plane:', this.#cameraOutlineCamera.far);
+        console.log('LineLoop Points:', cameraOutlinePoints);
+
+        // Create frustum buffer geometry from vertex pairs
+        const cameraOutlineGeo = new THREE.BufferGeometry().setFromPoints(cameraOutlinePoints);
+
+        const cameraLineLoop = new THREE.LineSegments(cameraOutlineGeo, this.#cameraOutlineMaterial);
+
+        this.#cameraOutlineMaterial.color = this.#views[viewIndex].renderCameraOutlineColor;
+
+        this.#cameraOutlineScene.clear();
+        this.#cameraOutlineScene.add(cameraLineLoop);
+
+        console.log("Viewport:", viewContainer.clientWidth, viewContainer.clientHeight);
+
+        renderer.setViewport(0,0,viewContainer.clientWidth,viewContainer.clientHeight);
+        renderer.render(this.#cameraOutlineScene, this.#cameraOutlineCamera);
+
+        // Restore old render parameters
+        renderer.autoClear = tempAutoClear;
+        renderer.setViewport(tempRenderViewport);
     }
 }

@@ -27,6 +27,9 @@ let testBoolean = true;
 export class Frustum {
     #projection;
     
+    static get PERSPECTIVE_FRUSTUM_LAYER() {return 1 };
+    static get ORTHO_FRUSTUM_LAYER() {return 2};
+    
     #perspFOV;
     #orthoSideLength;
     #near;
@@ -34,6 +37,8 @@ export class Frustum {
 
     #perspectiveCamera;
     #orthoCamera;
+
+    #perspectiveFrustum;
 
     #perspectiveTipLines;
     #perspectiveSideLines;
@@ -46,11 +51,19 @@ export class Frustum {
     #perspectiveFarPlaneSurface;
     #perspectiveFarPlane;
 
+    #orthoFrustum;
+
     #orthoSideLines;
+
     #orthoNearPlaneLines;
     #orthoNearPlaneSurface;
+    #orthoNearPlane;
+
     #orthoFarPlaneLines;
     #orthoFarPlaneSurface;
+    #orthoFarPlane;
+
+    #linesOnly;
 
     // TODO: Auto-sync these values with the default slider values on the webpage
     constructor() {
@@ -61,33 +74,92 @@ export class Frustum {
         this.#near = 1;
         this.#far = 10;
 
-        // Create geometry groups
-        this.#perspectiveSideLines = new THREE.Group();
-        this.#perspectiveTipLines = new THREE.Group();
+        this.#linesOnly = false;
 
-        this.#perspectiveNearPlaneLines = new THREE.Group();
-        this.#perspectiveFarPlaneLines = new THREE.Group();
+        // Initialize the groups for the frustum scene objects
+        this.#initializeGroups();
 
-        this.#perspectiveNearPlane = new THREE.Group();
-        this.#perspectiveFarPlane = new THREE.Group();
+        // Set the layers of the frustum groups
+        this.#updateGroupLayers();
 
-        this.#orthoSideLines = new THREE.Group();
-        this.#orthoNearPlaneLines = new THREE.Group();
-        this.#orthoFarPlaneLines = new THREE.Group();
+        // Set starting projection (makes the non-active frustum invisible)
+        this.setProjection(this.#projection);
 
         // Add clickable property to near/far planes
         this.#perspectiveNearPlane.userData.clickable = true;
         this.#perspectiveFarPlane.userData.clickable = true;
+        this.#orthoNearPlane.userData.clickable = true;
+        this.#orthoFarPlane.userData.clickable = true;
 
         // Add gumball constraints to near/far planes
-        this.#perspectiveNearPlane.userData.onlyTranslateZ = true;
-        this.#perspectiveFarPlane.userData.onlyTranslateZ = true;
+        this.#perspectiveNearPlane.userData.nearPlane = true;
+        this.#perspectiveFarPlane.userData.farPlane = true;
+        this.#orthoNearPlane.userData.nearPlane = true;
+        this.#orthoFarPlane.userData.farPlane = true;
 
         // Generate frustum geometry
         this.#updateFrustum("all");
     }
 
-    #createPlaneHelper(lineGroup, xyExtents, z, 
+    #initializeGroups() {
+        // Create perspective frustum groups
+        this.#perspectiveFrustum = new THREE.Group();
+        this.#perspectiveSideLines = new THREE.Group();
+        this.#perspectiveTipLines = new THREE.Group();
+        this.#perspectiveNearPlane = new THREE.Group();
+        this.#perspectiveFarPlane = new THREE.Group();
+        this.#perspectiveNearPlaneLines = new THREE.Group();
+        this.#perspectiveFarPlaneLines = new THREE.Group();
+
+        // Create orthographic frustum groups
+        this.#orthoFrustum = new THREE.Group();
+        this.#orthoSideLines = new THREE.Group();
+        this.#orthoNearPlane = new THREE.Group();
+        this.#orthoFarPlane = new THREE.Group();
+        this.#orthoNearPlaneLines = new THREE.Group();
+        this.#orthoFarPlaneLines = new THREE.Group();
+
+        // Add perspetive frustum subgroups to overall perspective frustum group
+        this.#perspectiveFrustum.add(this.#perspectiveSideLines);
+        this.#perspectiveFrustum.add(this.#perspectiveTipLines);
+        this.#perspectiveFrustum.add(this.#perspectiveNearPlane);
+        this.#perspectiveFrustum.add(this.#perspectiveFarPlane);
+        this.#perspectiveFrustum.add(this.#perspectiveNearPlaneLines);
+        this.#perspectiveFrustum.add(this.#perspectiveFarPlaneLines);
+
+        // Add orthographic frustum subgroups to overall orthographic frustum group
+        this.#orthoFrustum.add(this.#orthoSideLines);
+        this.#orthoFrustum.add(this.#orthoNearPlane);
+        this.#orthoFrustum.add(this.#orthoFarPlane);
+        this.#orthoFrustum.add(this.#orthoNearPlaneLines);
+        this.#orthoFrustum.add(this.#orthoFarPlaneLines);
+
+        // Set name properties for identification (mainly used for debugging)
+        this.#perspectiveFrustum.name = "PerspectiveFrustum";
+        this.#perspectiveSideLines.name = "PerspectiveFrustumSideLines";
+        this.#perspectiveTipLines.name = "PerspectiveFrustumTipLines";
+        this.#perspectiveNearPlane.name = "PerspectiveFrustumNearPlane";
+        this.#perspectiveFarPlane.name = "PerspectiveFrustumFarPlane";
+        this.#perspectiveNearPlaneLines.name = "PerspectiveFrustumNearPlaneOutline";
+        this.#perspectiveFarPlaneLines.name = "PerspectiveFrustumFarPlaneOutline";
+
+        this.#orthoFrustum.name = "OrthographicFrustum";
+        this.#orthoSideLines.name = "OrthographicFrustumSideLines";
+        this.#orthoNearPlane.name = "OrthographicFrustumNearPlane";
+        this.#orthoFarPlane.name = "OrthographicFrustumFarPlane";
+        this.#orthoNearPlaneLines.name = "OrthographicFrustumNearPlaneOutline";
+        this.#orthoFarPlaneLines.name = "OrthographicFrustumFarPlaneOutline";
+    }
+
+    #updateGroupLayers(){
+        let setPerspectiveLayer = (obj) => {obj.layers.set(Frustum.PERSPECTIVE_FRUSTUM_LAYER); };
+        this.#perspectiveFrustum.traverse(setPerspectiveLayer);
+
+        let setOrthoLayer = (obj) => {obj.layers.set(Frustum.ORTHO_FRUSTUM_LAYER); };
+        this.#orthoFrustum.traverse(setOrthoLayer);
+    }
+
+    #createPlaneHelper(lineGroup, xyExtents,
                         lineMaterial, planeMaterial) {
         // Create the list of points for the plane lines
         const planePoints = [];
@@ -95,16 +167,16 @@ export class Frustum {
         // Add the vertices that define the plane lines
         planePoints.push(new THREE.Vector3(-xyExtents,
                                             -xyExtents,
-                                            z));
+                                            0));
         planePoints.push(new THREE.Vector3(xyExtents,
                                             -xyExtents,
-                                            z));
+                                            0));
         planePoints.push(new THREE.Vector3(xyExtents,
                                             xyExtents,
-                                            z));
+                                            0));
         planePoints.push(new THREE.Vector3(-xyExtents,
                                             xyExtents,
-                                            z));
+                                            0));
 
         // Create the buffer geometry for the plane lines
         const planeLineGeo = new THREE.BufferGeometry();
@@ -126,10 +198,6 @@ export class Frustum {
         // Create the plane surface mesh
         var planeObject = new THREE.Mesh(planeSurfaceGeo,
                                         planeMaterial);
-
-        // Set the position/rotation of the plane surface mesh
-        planeObject.position.set(0,0,z);
-        planeObject.rotateZ(-Math.PI/2);
 
         return planeObject;
     }
@@ -264,16 +332,18 @@ export class Frustum {
         const frustumNearXandY = frustumSlope * this.#near;
 
         let plane = this.#createPlaneHelper(this.#perspectiveNearPlaneLines, 
-                                frustumNearXandY, this.#near, 
+                                frustumNearXandY,
                                 nearPlaneLineMaterial, 
                                 nearPlaneSurfaceMaterial);
 
         this.#perspectiveNearPlaneSurface = plane;
+        this.#perspectiveNearPlaneSurface.visible = !this.#linesOnly;
 
         // Update overall near plane group
         this.#perspectiveNearPlane.clear();
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneLines);
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneSurface);
+        this.#perspectiveNearPlane.position.set(0,0,this.#near);
     }
 
     #updatePerspectiveFarPlane() {
@@ -288,16 +358,18 @@ export class Frustum {
         const frustumFarXandY = frustumSlope * this.#far;
     
         let plane = this.#createPlaneHelper(this.#perspectiveFarPlaneLines, 
-                                            frustumFarXandY, this.#far, 
+                                            frustumFarXandY, 
                                             farPlaneLineMaterial, 
                                             farPlaneSurfaceMaterial);
 
         this.#perspectiveFarPlaneSurface = plane;
+        this.#perspectiveFarPlaneSurface.visible = !this.#linesOnly;
 
         // Update overall far plane group
         this.#perspectiveFarPlane.clear();
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneLines);
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneSurface);
+        this.#perspectiveFarPlane.position.set(0,0,this.#far);
     }
 
     #updateOrthoFrustumSideLines() {
@@ -356,12 +428,19 @@ export class Frustum {
         const orthoHalfDist = this.#orthoSideLength / 2;
     
         let plane = this.#createPlaneHelper(this.#orthoNearPlaneLines,  
-                                orthoHalfDist, this.#near, 
+                                orthoHalfDist,
                                 nearPlaneLineMaterial, 
                                 nearPlaneSurfaceMaterial);
 
         
         this.#orthoNearPlaneSurface = plane;
+        this.#orthoNearPlaneSurface.visible = !this.#linesOnly;
+
+        // Update overall near plane group
+        this.#orthoNearPlane.clear();
+        this.#orthoNearPlane.add(this.#orthoNearPlaneLines);
+        this.#orthoNearPlane.add(this.#orthoNearPlaneSurface);
+        this.#orthoNearPlane.position.set(0,0,this.#near);
     }
 
     #updateOrthoFarPlane() {
@@ -370,11 +449,18 @@ export class Frustum {
         const orthoHalfDist = this.#orthoSideLength / 2;
     
         let plane = this.#createPlaneHelper(this.#orthoFarPlaneLines, 
-                                            orthoHalfDist, this.#far, 
+                                            orthoHalfDist,
                                             farPlaneLineMaterial, 
                                             farPlaneSurfaceMaterial);
 
         this.#orthoFarPlaneSurface = plane;
+        this.#orthoFarPlaneSurface.visible = !this.#linesOnly;
+
+        // Update overall near plane group
+        this.#orthoFarPlane.clear();
+        this.#orthoFarPlane.add(this.#orthoFarPlaneLines);
+        this.#orthoFarPlane.add(this.#orthoFarPlaneSurface);
+        this.#orthoFarPlane.position.set(0,0,this.#far);
     }
 
     #updatePerspectiveCamera() {
@@ -421,6 +507,8 @@ export class Frustum {
             this.#updateOrthoFarPlane();
             this.#updateOrthoCamera();
         }
+
+        this.#updateGroupLayers();
     }
 
     getProjection() {
@@ -428,19 +516,21 @@ export class Frustum {
     }
 
     setProjection(projection) {
+        // Otherwise, if the projection is a valid projection type, swap the projection
         if(projection == "ortho" || projection == "perspective") {
             this.#projection = projection;
             return true;
         }
 
+        // If the specified projection is not valid, return false to indicate failure
         return false;
     }
 
     swapProjection() {
-        if(projection == "ortho") 
-            this.#projection = "perspective";
+        if(this.#projection == "ortho")
+            this.setProjection("perspective");
         else 
-            this.#projection = "ortho";
+            this.setProjection("ortho");
     }
 
     getFOV() {
@@ -479,6 +569,21 @@ export class Frustum {
         this.#updateFrustum("all");
     }
 
+    getLinesOnly() {
+        return this.#linesOnly;
+    }
+
+    setLinesOnly(linesOnly) {
+        // Set state variable
+        this.#linesOnly = linesOnly;
+        
+        // Update plane mesh visibilities
+        this.#perspectiveNearPlaneSurface.visible = !linesOnly;
+        this.#perspectiveFarPlaneSurface.visible = !linesOnly;
+        this.#orthoNearPlaneSurface.visible = !linesOnly;
+        this.#orthoFarPlaneSurface.visible = !linesOnly;
+    }
+
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
     applyFrustumDistortionToObject(obj) {
@@ -504,7 +609,7 @@ export class Frustum {
         obj.position.set(0,0,0);
         obj.rotation.set(0,0,0,"XYZ");
         obj.scale.set(1,1,1);
-        
+
         obj.geometry.attributes.position.needsUpdate = true;
         try {
             obj.geometry.computeBoundingSphere();   
@@ -515,45 +620,14 @@ export class Frustum {
         }
     }
 
-    addFrustumToScene(scene, mode, linesOnly) {
-        if(mode == null)
-            mode = this.#projection;
-        if(linesOnly == null)
-            linesOnly = false;
-
-        if(mode == "perspective") {
-            scene.add(this.#perspectiveSideLines);
-            scene.add(this.#perspectiveTipLines);
-            scene.add(this.#perspectiveNearPlaneLines);
-            scene.add(this.#perspectiveFarPlaneLines);
-            if(!linesOnly) {
-                scene.add(this.#perspectiveNearPlaneSurface);
-                scene.add(this.#perspectiveFarPlaneSurface);
-            }
-        }
-        else if(mode == "ortho") {
-            scene.add(this.#orthoSideLines);
-            scene.add(this.#orthoNearPlaneLines);
-            scene.add(this.#orthoFarPlaneLines);
-            if(!linesOnly) {
-                scene.add(this.#orthoNearPlaneSurface);
-                scene.add(this.#orthoFarPlaneSurface);
-            }
-        }
+    addFrustumToScene(scene) {
+        scene.add(this.#perspectiveFrustum);
+        scene.add(this.#orthoFrustum);
     }
 
     removeFrustumFromScene(scene) {
-        scene.remove(this.#perspectiveSideLines);
-        scene.remove(this.#perspectiveTipLines);
-        scene.remove(this.#perspectiveNearPlaneLines);
-        scene.remove(this.#perspectiveNearPlaneSurface);
-        scene.remove(this.#perspectiveFarPlaneLines);
-        scene.remove(this.#perspectiveFarPlaneSurface);
-        scene.remove(this.#orthoSideLines);
-        scene.remove(this.#orthoNearPlaneLines);
-        scene.remove(this.#orthoNearPlaneSurface);
-        scene.remove(this.#orthoFarPlaneLines);
-        scene.remove(this.#orthoFarPlaneSurface);
+        scene.remove(this.#perspectiveFrustum);
+        scene.remove(this.#orthoFrustum);
     }
 
     #addDistortedLineGroup(distortedFrustum, lineGroup) {
@@ -566,7 +640,8 @@ export class Frustum {
         }
     }
 
-    addDistortedFrustumToScene(scene, mode, linesOnly) {
+    // TODO - Refactor this based on new frustum-scene paradigm
+    addDistortedFrustumToScene(scene, mode) {
         if(mode == null || mode == "")
             mode = this.#projection;
 
@@ -586,50 +661,47 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#perspectiveFarPlaneLines);
 
-            if(!linesOnly){
-                const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
-                this.applyFrustumDistortionToObject(distortedNearPlane);
+            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
+            this.applyFrustumDistortionToObject(distortedNearPlane);
 
-                distortedNearPlane.position.set(0,0,0);
+            distortedNearPlane.position.set(0,0,0);
 
-                distortedFrustum.add(distortedNearPlane);
+            distortedFrustum.add(distortedNearPlane);
 
-                const distortedFarPlane = deepCopyMeshOrLine(this.#perspectiveFarPlaneSurface);
-                this.applyFrustumDistortionToObject(distortedFarPlane);
+            const distortedFarPlane = deepCopyMeshOrLine(this.#perspectiveFarPlaneSurface);
+            this.applyFrustumDistortionToObject(distortedFarPlane);
 
-                distortedFarPlane.position.set(0,0,0);
+            distortedFarPlane.position.set(0,0,0);
 
-                distortedFrustum.add(distortedFarPlane);
-            }
+            distortedFrustum.add(distortedFarPlane);
         }
         else if(mode == "ortho") {
             // Distort Ortho Frustum Side Lines
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoSideLines);
 
-            // Distort Near Plane
+            // Distort Near Plane 
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoNearPlaneLines);
 
-            // Distort Far Plane
+            const distortedNearPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
+            this.applyFrustumDistortionToObject(distortedNearPlane);
+
+            distortedNearPlane.position.set(0,0,0);
+
+            distortedFrustum.add(distortedNearPlane);
+
+            // Distort Far Plane 
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoFarPlaneLines);
 
-            if(!linesOnly){
-                const distortedNearPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
-                this.applyFrustumDistortionToObject(distortedNearPlane);
 
-                distortedNearPlane.position.set(0,0,0);
+            const distortedFarPlane = deepCopyMeshOrLine(this.#orthoFarPlaneSurface);
+            this.applyFrustumDistortionToObject(distortedFarPlane);
 
-                distortedFrustum.add(distortedNearPlane);
+            distortedFarPlane.position.set(0,0,0);
 
-                const distortedFarPlane = deepCopyMeshOrLine(this.#orthoFarPlaneSurface);
-                this.applyFrustumDistortionToObject(distortedFarPlane);
-
-                distortedFarPlane.position.set(0,0,0);
-
-                distortedFrustum.add(distortedFarPlane);
-            }
+            distortedFrustum.add(distortedFarPlane);
         }
 
         scene.add(distortedFrustum);

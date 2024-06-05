@@ -16,7 +16,7 @@ let inputManager;
 function init() {
 	probeScene = new ProbeScene();
 	
-	viewManager = new ViewManager(probeScene);
+	viewManager = new ViewManager();
 
 	inputManager = new InputManager(probeScene, viewManager);
 
@@ -82,6 +82,10 @@ function render() {
 			probeScene.renderScene(ii, view.renderer, view.camera, 
 									true, view.frustumLinesOnly, 
 									view.imagespace);
+
+			if(view.renderCameraOutline) {
+				viewManager.renderCameraOutline(ii);
+			}
 		}
 	}
 	// Otherwise, render the active view.
@@ -90,6 +94,10 @@ function render() {
 		probeScene.renderScene(activeView, view.renderer, view.camera, 
 								true, view.frustumLinesOnly, 
 								view.imagespace);
+
+		if(view.renderCameraOutline) {
+			viewManager.renderCameraOutline(activeView);
+		}
 	}
 
 }
