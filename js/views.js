@@ -34,6 +34,7 @@ export class ViewManager {
                 rotatable: true,
                 imagespace: false,
                 gumball: true,
+                showFrustum: true,
             },
             {
                 name: "orthoView",
@@ -48,6 +49,7 @@ export class ViewManager {
                 rotatable: false,
                 imagespace: false,
                 gumball: true,
+                showFrustum: true,
             },
             {
                 name: "cameraView",
@@ -60,8 +62,9 @@ export class ViewManager {
                 imagespace: false,
                 frustumLinesOnly: true,
                 gumball: false,
+                showFrustum: false,
                 renderCameraOutline: true,
-                renderCameraOutlineColor: new THREE.Color("#ffffff"),
+                renderCameraOutlineColor: new THREE.Color("#0000ff"),
             },
             {
                 name: "imageView",
@@ -75,6 +78,7 @@ export class ViewManager {
                 rotatable: true,
                 imagespace: true,
                 gumball: false,
+                showFrustum: true,
             }
         ];
 
@@ -412,6 +416,8 @@ export class ViewManager {
         const canvasWidth = viewContainer.clientWidth;
         const canvasHeight = viewContainer.clientHeight;
 
+        renderer.setSize(viewContainer.clientWidth, viewContainer.clientHeight);
+
         let viewWidth, viewHeight;
 
         if(view.name == "cameraView") {
@@ -420,7 +426,6 @@ export class ViewManager {
             const viewportLeft = (canvasWidth - viewWidth) / 2;
             const viewportTop = (canvasHeight - viewHeight) / 2;
 
-            renderer.setSize(viewWidth, viewHeight);
             renderer.setViewport(viewportLeft, viewportTop,
                                 viewWidth, viewHeight);
         }
@@ -428,7 +433,6 @@ export class ViewManager {
             viewWidth = viewContainer.clientWidth;
             viewHeight = viewContainer.clientHeight;
 
-            renderer.setSize(viewWidth, viewHeight);
             renderer.setViewport(0, 0, viewWidth, viewHeight);
         }
         
@@ -488,41 +492,37 @@ export class ViewManager {
 
         let tempRenderViewport = new THREE.Vector4();
         renderer.getViewport(tempRenderViewport);
-        
+
+        // Near one constant
+        const nearOne = 1;
+
         // Compute camera outline points
         const cameraOutlinePoints = [];
 
         // View area is proportionally wider than camera
         if(viewAreaAspect >= camAspect) {
-            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, -0.9999, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, 0.9999, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(0.75, -0.9999, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(0.75, 0.9999, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, -nearOne, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(aspectRatioRatio, -nearOne, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(aspectRatioRatio, nearOne, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-aspectRatioRatio, nearOne, 1));
         }
         // View area is proportionally taller than camera
         else {
-            cameraOutlinePoints.push(new THREE.Vector3(-1, -1/0.85, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(1, -1/0.85, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(-1, 1/0.85, 1));
-            cameraOutlinePoints.push(new THREE.Vector3(1, 1/0.85, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-nearOne, -1/aspectRatioRatio, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(nearOne, -1/aspectRatioRatio, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(nearOne, 1/aspectRatioRatio, 1));
+            cameraOutlinePoints.push(new THREE.Vector3(-nearOne, 1/aspectRatioRatio, 1));
         }
-
-        console.log('Camera Position:', this.#cameraOutlineCamera.position);
-        console.log('Camera Near Plane:', this.#cameraOutlineCamera.near);
-        console.log('Camera Far Plane:', this.#cameraOutlineCamera.far);
-        console.log('LineLoop Points:', cameraOutlinePoints);
 
         // Create frustum buffer geometry from vertex pairs
         const cameraOutlineGeo = new THREE.BufferGeometry().setFromPoints(cameraOutlinePoints);
 
-        const cameraLineLoop = new THREE.LineSegments(cameraOutlineGeo, this.#cameraOutlineMaterial);
+        const cameraLineLoop = new THREE.LineLoop(cameraOutlineGeo, this.#cameraOutlineMaterial);
 
         this.#cameraOutlineMaterial.color = this.#views[viewIndex].renderCameraOutlineColor;
 
         this.#cameraOutlineScene.clear();
         this.#cameraOutlineScene.add(cameraLineLoop);
-
-        console.log("Viewport:", viewContainer.clientWidth, viewContainer.clientHeight);
 
         renderer.setViewport(0,0,viewContainer.clientWidth,viewContainer.clientHeight);
         renderer.render(this.#cameraOutlineScene, this.#cameraOutlineCamera);

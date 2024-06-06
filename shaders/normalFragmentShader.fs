@@ -1,6 +1,12 @@
-varying vec3 vNormal;
+#include <clipping_planes_pars_fragment>
+
+varying vec3 vWorldPosition;
+varying vec3 vWorldNormal;
 
 void main() {
-    gl_FragColor = vec4(0.5f*vec3(1.0f - vNormal.x, 1.0f + vNormal.y, 1.0f + vNormal.z), 1.0);
-
+    #include <clipping_planes_fragment>
+    
+    gl_FragColor = vec4(0.5f*vec3(1.0f - vWorldNormal.x, 
+                                  1.0f + vWorldNormal.y, 
+                                  1.0f + vWorldNormal.z), 1.0f);
 }

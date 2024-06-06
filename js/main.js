@@ -80,7 +80,7 @@ function render() {
 		for (let ii = 0; ii < views.length; ++ii) {
 			const view = views[ii];
 			probeScene.renderScene(ii, view.renderer, view.camera, 
-									true, view.frustumLinesOnly, 
+									view.showFrustum, view.frustumLinesOnly, 
 									view.imagespace);
 
 			if(view.renderCameraOutline) {
@@ -92,7 +92,7 @@ function render() {
 	else {
 		const view = views[activeView];
 		probeScene.renderScene(activeView, view.renderer, view.camera, 
-								true, view.frustumLinesOnly, 
+								view.showFrustum, view.frustumLinesOnly, 
 								view.imagespace);
 
 		if(view.renderCameraOutline) {

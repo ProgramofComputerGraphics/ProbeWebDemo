@@ -21,8 +21,17 @@ flipX.set( -1,0,0,0,
             0,0,1,0,
             0,0,0,1 );
 
-            
-let testBoolean = true;
+const toDonConvention = new THREE.Matrix4();
+toDonConvention.set( -1,0,0,0,
+                      0,1,0,0,
+                      0,0,0.5,0.5,
+                      0,0,0,1 );
+
+export let testBoolean = false;
+
+export function setTestBoolean(b) {
+    testBoolean = b;
+}
 
 export class Frustum {
     #projection;
@@ -569,6 +578,11 @@ export class Frustum {
         this.#updateFrustum("all");
     }
 
+    setVisible(visible) {
+        this.#orthoFrustum.visible = !!visible;
+        this.#perspectiveFrustum.visible = !!visible;
+    }
+
     getLinesOnly() {
         return this.#linesOnly;
     }
@@ -594,16 +608,69 @@ export class Frustum {
         const positionAttribute = obj.geometry.getAttribute("position");
         const vertex = new THREE.Vector3();
 
+        const normalAttribute = obj.geometry.getAttribute("normal");
+        const normal = new THREE.Vector3();
+
+        if(obj.geometry instanceof THREE.BoxGeometry && testBoolean){
+            console.log("Pre-Distorted:");
+        }
+
         for (let i = 0; i < positionAttribute.count; i++) {
             vertex.fromBufferAttribute(positionAttribute, i);
+
+            if(obj.geometry instanceof THREE.BoxGeometry && testBoolean)
+                console.log("V"+i+":", vertex);
 
             vertex.applyMatrix4(obj.matrixWorld);
             vertex.applyMatrix4(camera.matrixWorldInverse);
             vertex.applyMatrix4(camera.projectionMatrix);
-            vertex.applyMatrix4(flipX);
+            vertex.applyMatrix4(toDonConvention);
 
             // Set position to vertex
-            positionAttribute.setXYZ(i, vertex.x, vertex.y, (vertex.z + 1)/2); 
+            positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); 
+        }
+
+        if(normalAttribute){
+            const vert1 = new THREE.Vector3();
+            const vert2 = new THREE.Vector3();
+            const vert3 = new THREE.Vector3();
+
+            const indices = obj.geometry.index; 
+
+            let idx1, idx2, idx3;
+            for(let i = 0; i < indices.count; i+=3){
+                if(indices == null){
+                    idx1 = i;
+                    idx2 = i+1;
+                    idx3 = i+2;
+                }
+                else {
+                    idx1 = indices.array[i];
+                    idx2 = indices.array[i+1];
+                    idx3 = indices.array[i+2];
+                }
+
+                vert1.fromBufferAttribute(positionAttribute, idx1);
+                vert2.fromBufferAttribute(positionAttribute, idx2);
+                vert3.fromBufferAttribute(positionAttribute, idx3);
+
+                normal.crossVectors(vert2.sub(vert1), vert3.sub(vert1));
+                normal.normalize();
+
+                if(Math.abs(normal.lengthSq() - 1) > 0.0001) {
+                    console.log("Unnormalized Normal: ", normal, 
+                        "\nSq Length:", normal.lengthSq());
+                }
+
+                normalAttribute.setXYZ(idx1, normal.x, normal.y, normal.z);
+                normalAttribute.setXYZ(idx2, normal.x, normal.y, normal.z);
+                normalAttribute.setXYZ(idx3, normal.x, normal.y, normal.z);
+            }
+            if(obj.geometry instanceof THREE.BoxGeometry && testBoolean){
+                console.log("Post-Distorted:", obj.geometry.attributes);
+                console.log("Indices:", indices);
+                testBoolean = false;
+            }
         }
 
         obj.position.set(0,0,0);
@@ -611,6 +678,9 @@ export class Frustum {
         obj.scale.set(1,1,1);
 
         obj.geometry.attributes.position.needsUpdate = true;
+        if(obj.geometry.attributes.normal)
+            obj.geometry.attributes.normal.needsUpdate = true;
+
         try {
             obj.geometry.computeBoundingSphere();   
         }
@@ -724,11 +794,11 @@ export class Frustum {
         const clippingPlanes = [];
     
         // Left-side plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), onePlusEpsilon));
-        
-        // Right-side plane
         clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), onePlusEpsilon));
     
+        // Right-side plane
+        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), onePlusEpsilon));
+        
         // Bottom-side plane
         clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), onePlusEpsilon));
     

@@ -4,7 +4,7 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { loadFile } from './file.js';
-import { Frustum } from './frustum.js';
+import { Frustum, testBoolean } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
@@ -57,6 +57,7 @@ export class ProbeScene {
             vertexShader : loadFile("shaders/normalVertexShader.vs"),
             fragmentShader : loadFile("/shaders/normalFragmentShader.fs")
         });
+        
         this.#normalMaterial.extensions.clipCullDistance = true;
 
         this.#objMaterial = this.#standardMaterial;
@@ -226,6 +227,10 @@ export class ProbeScene {
 
     setFarPlane(far) {
         this.#frustum.setFar(far);
+    }
+
+    setShowFrustum(showFrustum){
+        this.#frustum.setVisible(showFrustum);
     }
 
     #updateObjectMaterial() {
@@ -468,6 +473,9 @@ export class ProbeScene {
         if(this.#object instanceof THREE.Mesh || 
             this.#object instanceof THREE.Line) 
         {
+            if(testBoolean){
+                console.log("Original:", this.#object);
+            }
             distortedObj = deepCopyMeshOrLine(this.#object);
             this.#frustum.applyFrustumDistortionToObject(distortedObj);
         }
@@ -512,6 +520,7 @@ export class ProbeScene {
 
         // If rendering the real scene, just render the scene
         if(!imagespace) {
+            this.setShowFrustum(showFrustum);
             renderer.render(this.#realScene, camera);
         }
         // If rendering the image space scene, create the perspective distorted
