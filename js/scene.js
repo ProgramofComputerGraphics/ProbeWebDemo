@@ -5,7 +5,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { AxesObject } from './axesObject.js';
 import { loadFile } from './file.js';
-import { Frustum, testBoolean } from './frustum.js';
+import { Frustum } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
@@ -236,6 +236,14 @@ export class ProbeScene {
 
     setFarPlane(far) {
         this.#frustum.setFar(far);
+    }
+
+    activateFrustumTransition() {
+        this.#frustum.activateTransition();
+    }
+
+    tickFrustumDistortionMatrix() {
+        this.#frustum.tickFrustumDistortionMatrix();
     }
 
     setShowFrustum(showFrustum){
@@ -495,9 +503,6 @@ export class ProbeScene {
         if(this.#object instanceof THREE.Mesh || 
             this.#object instanceof THREE.Line) 
         {
-            if(testBoolean){
-                console.log("Original:", this.#object);
-            }
             distortedObj = deepCopyMeshOrLine(this.#object);
             this.#frustum.applyFrustumDistortionToObject(distortedObj);
         }
@@ -555,6 +560,8 @@ export class ProbeScene {
                 this.#frustum.addDistortedFrustumToScene(this.#imageSpaceScene, 
                                                             null);
             }
+
+            renderer.clippingPlanes = this.#frustum.generateFrustumClippingPlanes();
     
             renderer.render(this.#imageSpaceScene, camera);
     

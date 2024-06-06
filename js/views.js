@@ -175,11 +175,6 @@ export class ViewManager {
 
         // Add the DOM element of the view's renderer to the container div as a child
         viewContainer.appendChild(view.renderer.domElement);
-
-        // Add Clipping Planes for Imagespace Renderer
-        if(view.imagespace) {
-            view.renderer.clippingPlanes = Frustum.generateImageFrustumClippingPlanes();
-        }
     }
 
     #initCameraControls(view) {

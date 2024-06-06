@@ -256,5 +256,53 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     // UI Settings
     initShowAxesCheckbox(probeScene);
     initNearFarPlaneOpacitySlider(probeScene);
+
+    // View Buttons
+    window.onFullscreenButtonPressed = function(viewName) {
+        const activeView = viewManager.getActiveView();
+        const button = document.getElementById(viewName + "Button");
+        if(activeView != -1) {
+            button.textContent = "Fullscreen";
+            viewManager.setActiveView(-1);
+        }
+        else {
+            if(!viewManager.setActiveView(viewManager.getViewByName(viewName))) {
+                console.error("Failed to set active view with name", viewName);
+            }
+            else {
+                button.textContent = "Back to Four Views";
+            }
+        }
+    }
     
+    window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
+        const view = viewManager.getViewByName(viewName);
+    
+        viewManager.swapViewIfOrtho(view, probeScene.getFarPlane());
+    
+        const mode = viewManager.getViewOrthoMode(view);
+        const button = document.getElementById(buttonID);
+    
+        if(mode == "elevation") {
+            button.textContent = "Elevation (Click to Swap to Plan)";
+        }
+        else if(mode == "plan") {
+            button.textContent = "Plan (Click to Swap to Elevation)";
+        }
+        else {
+            console.error("Error: Non-Ortho View Accessed by Ortho Swap Button");
+        }
+    }
+
+    window.onImageSwapButtonPressed = function() {   
+        probeScene.activateFrustumTransition();
+        const button = document.getElementById("imageSwapButton");
+
+        if(button.textContent == "Click to Undistort") {
+            button.textContent = "Click to Distort";
+        }
+        else if(button.textContent == "Click to Distort") {
+            button.textContent = "Click to Undistort";
+        }
+    }
 }

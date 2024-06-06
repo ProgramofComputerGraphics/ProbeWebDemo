@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { deepCopyMeshOrLine } from './utils.js';
+import { addMatrices, deepCopyMeshOrLine } from './utils.js';
 
 const frustumSideLineMaterial = new THREE.LineBasicMaterial({color : 0xa0a0a0});
 const nearPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0x4040e0});
@@ -27,12 +27,6 @@ toDonConvention.set( -1,0,0,0,
                       0,0,0.5,0.5,
                       0,0,0,1 );
 
-export let testBoolean = false;
-
-export function setTestBoolean(b) {
-    testBoolean = b;
-}
-
 export class Frustum {
     #projection;
     
@@ -46,6 +40,12 @@ export class Frustum {
 
     #perspectiveCamera;
     #orthoCamera;
+
+    #isTransitioning;
+    #transitioningToImageSpace;
+    #transitionStart;
+    #transitionDuration;
+    #distortionMatrix;
 
     #perspectiveFrustum;
 
@@ -84,6 +84,12 @@ export class Frustum {
         this.#far = 10;
 
         this.#linesOnly = false;
+
+        this.#isTransitioning = false;
+        this.#transitioningToImageSpace = true;
+        this.#transitionStart = null;
+        this.#transitionDuration = 1000;
+        this.#distortionMatrix = new THREE.Matrix4();
 
         // Initialize the groups for the frustum scene objects
         this.#initializeGroups();
@@ -212,11 +218,7 @@ export class Frustum {
     }
 
     #updatePerspectiveFrustumSideLines() {       
-        // Compute "slope" of the frustum pyramid (change in X/Y over change in Z)
-        // Note: Because we assume a square frustum, this slope is the same for both
-        // X and Y. Also note that the angle is divided by two, which is why there is
-        // a division by 360 instead of 180.
-        const frustumSlope = Math.tan(this.#perspFOV * Math.PI / 360);
+        const frustumSlope = this.getPerspectiveFrustumSlope();
     
         // Compute the X/Y Distance from the center of the frustum to the inner
         // corners. This value is used to create the near-plane frustum vertices. 
@@ -281,7 +283,7 @@ export class Frustum {
         // Note: Because we assume a square frustum, this slope is the same for both
         // X and Y. Also note that the angle is divided by two, which is why there is
         // a division by 360 instead of 180.
-        const frustumSlope = Math.tan(this.#perspFOV * Math.PI / 360);
+        const frustumSlope = this.getPerspectiveFrustumSlope();
     
         // Compute the X/Y Distance from the center of the frustum to the inner
         // corners. This value is used to create the near-plane frustum vertices. 
@@ -334,7 +336,7 @@ export class Frustum {
         // Note: Because we assume a square frustum, this slope is the same for both
         // X and Y. Also note that the angle is divided by two, which is why there is
         // a division by 360 instead of 180.
-        const frustumSlope = Math.tan(this.#perspFOV * Math.PI / 360);
+        const frustumSlope = this.getPerspectiveFrustumSlope();
     
         // Compute the X/Y Distance from the center of the frustum to the inner
         // corners. This value is used to create the near-plane frustum vertices. 
@@ -360,7 +362,7 @@ export class Frustum {
         // Note: Because we assume a square frustum, this slope is the same for both
         // X and Y. Also note that the angle is divided by two, which is why there is
         // a division by 360 instead of 180.
-        const frustumSlope = Math.tan(this.#perspFOV * Math.PI / 360);
+        const frustumSlope = this.getPerspectiveFrustumSlope();
     
         // Compute the X/Y Distance from the center of the frustum to the outer
         // corners. This value is used to create the far-plane frustum vertices. 
@@ -551,6 +553,14 @@ export class Frustum {
         this.#updateFrustum("perspective");
     }
 
+    getPerspectiveFrustumSlope() {
+        // Compute "slope" of the frustum pyramid (change in X/Y over change in Z)
+        // Note: Because we assume a square frustum, this slope is the same for both
+        // X and Y. Also note that the angle is divided by two, which is why there is
+        // a division by 360 instead of 180.
+        return Math.tan(this.#perspFOV * Math.PI / 360);
+    }
+
     getOrthoSideLength() {
         return this.#orthoSideLength;
     }
@@ -603,33 +613,93 @@ export class Frustum {
         farPlaneSurfaceMaterial.opacity = opacity;
     }
 
+    activateTransition() {
+        const now = Date.now();
+
+        this.#transitioningToImageSpace = !this.#transitioningToImageSpace;
+
+        // If already transitioning, adjust the start time to flip the transition 
+        if(this.#isTransitioning) {
+
+            // This line is based on the following derivation:
+            // oldTimeLeft = duration - (now - oldStart)
+            // newPassedTime = oldTimeLeft 
+            //               = duration - (now - oldStart)
+            // newStart = now - newPassedTime 
+            //          = now - (duration - (now - oldStart))
+            //          = now - duration + now - oldStart
+            // newStart = 2 * now - duration - oldStart
+            this.#transitionStart = 2 * now - this.#transitionDuration - this.#transitionStart;
+            return;
+        }
+
+        // Otherwise, start to transition to the other space
+        this.#transitionStart = now;
+        this.#isTransitioning = true;
+    }
+
+    tickFrustumDistortionMatrix(mode) {
+        if(mode != "perspective" || mode != "ortho"){
+            mode = this.#projection;
+        }
+
+        const cam = mode == "perspective" ? this.#perspectiveCamera : this.#orthoCamera;
+
+        if(!this.#isTransitioning) {
+            if(this.#transitioningToImageSpace) {
+                this.#distortionMatrix.multiplyMatrices(cam.projectionMatrix, 
+                                                        cam.matrixWorldInverse);
+                this.#distortionMatrix.premultiply(toDonConvention);
+            }
+            else {
+                this.#distortionMatrix.identity();
+            }
+            return;
+        }
+
+        const now = Date.now();
+        const fullDistortMatrix = new THREE.Matrix4();
+        fullDistortMatrix.multiplyMatrices(cam.projectionMatrix, 
+                                            cam.matrixWorldInverse);
+        fullDistortMatrix.premultiply(toDonConvention);
+
+        const noDistortMatrix = new THREE.Matrix4();
+
+        let t = (now - this.#transitionStart) / (this.#transitionDuration);
+        
+        if(t < 0) { t = 0; this.#isTransitioning = false; }
+        if(t > 1) { t = 1; this.#isTransitioning = false; }
+
+        if(this.#transitioningToImageSpace) {
+            noDistortMatrix.multiplyScalar(1-t);
+            fullDistortMatrix.multiplyScalar(t);
+        }
+        else {
+            noDistortMatrix.multiplyScalar(t);
+            fullDistortMatrix.multiplyScalar(1-t);
+        }
+
+        this.#distortionMatrix = addMatrices(noDistortMatrix, fullDistortMatrix);
+    }
+
+    applyFrustumDistortionToVector(vec){
+        return vec.applyMatrix4(this.#distortionMatrix);
+    }
+
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
     applyFrustumDistortionToObject(obj) {
-        const camera = this.#projection == "perspective" ? 
-                                    this.#perspectiveCamera : 
-                                    this.#orthoCamera;
-
         const positionAttribute = obj.geometry.getAttribute("position");
         const vertex = new THREE.Vector3();
 
         const normalAttribute = obj.geometry.getAttribute("normal");
         const normal = new THREE.Vector3();
 
-        if(obj.geometry instanceof THREE.BoxGeometry && testBoolean){
-            console.log("Pre-Distorted:");
-        }
-
         for (let i = 0; i < positionAttribute.count; i++) {
             vertex.fromBufferAttribute(positionAttribute, i);
 
-            if(obj.geometry instanceof THREE.BoxGeometry && testBoolean)
-                console.log("V"+i+":", vertex);
-
             vertex.applyMatrix4(obj.matrixWorld);
-            vertex.applyMatrix4(camera.matrixWorldInverse);
-            vertex.applyMatrix4(camera.projectionMatrix);
-            vertex.applyMatrix4(toDonConvention);
+            vertex.applyMatrix4(this.#distortionMatrix);
 
             // Set position to vertex
             positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); 
@@ -670,11 +740,6 @@ export class Frustum {
                 normalAttribute.setXYZ(idx1, normal.x, normal.y, normal.z);
                 normalAttribute.setXYZ(idx2, normal.x, normal.y, normal.z);
                 normalAttribute.setXYZ(idx3, normal.x, normal.y, normal.z);
-            }
-            if(obj.geometry instanceof THREE.BoxGeometry && testBoolean){
-                console.log("Post-Distorted:", obj.geometry.attributes);
-                console.log("Indices:", indices);
-                testBoolean = false;
             }
         }
 
@@ -791,31 +856,155 @@ export class Frustum {
         }
     }
 
-    // TODO: Remove static
-    static generateImageFrustumClippingPlanes() {
+    #generatePerspectiveFrustumPoints() {
+        const frustumSlope = this.getPerspectiveFrustumSlope();
+
+        // Compute the X/Y Distance from the center of the frustum to the inner
+        // corners. This value is used to create the near-plane frustum vertices. 
+        const frustumNearXandY = frustumSlope * this.#near;
+    
+        // Compute the X/Y Distance from the center of the frustum to the outer
+        // corners. This value is used to create the far-plane frustum vertices. 
+        const frustumFarXandY = frustumSlope * this.#far;
+
+        const frustumPoints = [];
+
+        frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                            -frustumNearXandY,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(frustumNearXandY,
+                                            -frustumNearXandY,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(frustumNearXandY,
+                                            frustumNearXandY,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
+                                            frustumNearXandY,
+                                            this.#near));
+
+        frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
+                                            -frustumFarXandY,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(frustumFarXandY,
+                                            -frustumFarXandY,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(frustumFarXandY,
+                                            frustumFarXandY,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
+                                            frustumFarXandY,
+                                            this.#far));
+
+        for(let i = 0; i < frustumPoints.length; ++i) {
+            this.applyFrustumDistortionToVector(frustumPoints[i]);
+        }
+
+        return frustumPoints;
+    }
+
+    #generateOrthoFrustumPoints(){
+        const frustumHalfLength = this.#orthoSideLength / 2;
+
+        const frustumPoints = [];
+
+        frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
+                                            -frustumHalfLength,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(frustumHalfLength,
+                                            -frustumHalfLength,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(frustumHalfLength,
+                                            frustumHalfLength,
+                                            this.#near));
+        frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
+                                            frustumHalfLength,
+                                            this.#near));
+
+        frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
+                                            -frustumHalfLength,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(frustumHalfLength,
+                                            -frustumHalfLength,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(frustumHalfLength,
+                                            frustumHalfLength,
+                                            this.#far));
+        frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
+                                            frustumHalfLength,
+                                            this.#far));
+
+        for(let i = 0; i < frustumPoints.length; ++i) {
+            this.applyFrustumDistortionToVector(frustumPoints[i]);
+        }
+
+        return frustumPoints;
+    }
+
+    generateFrustumClippingPlanes(mode) {
         const epsilon = 0.001;
-        const onePlusEpsilon = 1 + epsilon;
         
+        if(mode != "perspective" || mode != "ortho") {
+            mode = this.#projection;
+        }
+
+        let frustumPoints;
+
+        if(mode == "perspective") 
+            frustumPoints = this.#generatePerspectiveFrustumPoints();
+        else 
+            frustumPoints = this.#generateOrthoFrustumPoints();
+
         const clippingPlanes = [];
     
-        // Left-side plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(-1, 0, 0), onePlusEpsilon));
+        // Left-side plane (backwards from expected due to OpenGL convention)
+        const rightPlane = new THREE.Plane();
+        rightPlane.setFromCoplanarPoints(frustumPoints[2],
+                                        frustumPoints[1],
+                                        frustumPoints[5]);
+        rightPlane.constant += epsilon;
+        clippingPlanes.push(rightPlane);
     
-        // Right-side plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(1, 0, 0), onePlusEpsilon));
+        // Right-side plane (backwards from expected due to OpenGL convention)
+        const leftPlane = new THREE.Plane();
+        leftPlane.setFromCoplanarPoints(frustumPoints[0],
+                                        frustumPoints[3],
+                                        frustumPoints[4]);
+        leftPlane.constant += epsilon;
         
+        clippingPlanes.push(leftPlane);
+
         // Bottom-side plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 1, 0), onePlusEpsilon));
-    
+        const bottomPlane = new THREE.Plane();
+        bottomPlane.setFromCoplanarPoints(frustumPoints[1],
+                                        frustumPoints[0],
+                                        frustumPoints[4]);
+        bottomPlane.constant += epsilon;
+        clippingPlanes.push(bottomPlane);
+
         // Top-side plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, -1, 0), onePlusEpsilon));
-    
+        const topPlane = new THREE.Plane();
+        topPlane.setFromCoplanarPoints(frustumPoints[3],
+                                        frustumPoints[2],
+                                        frustumPoints[6]);
+        topPlane.constant += epsilon;
+        clippingPlanes.push(topPlane);
+
         // Near plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 0, 1), epsilon));
-    
+        const nearPlane = new THREE.Plane();
+        nearPlane.setFromCoplanarPoints(frustumPoints[0],
+                                        frustumPoints[1],
+                                        frustumPoints[2]);
+        nearPlane.constant += epsilon;
+        clippingPlanes.push(nearPlane);
+
         // Far plane
-        clippingPlanes.push(new THREE.Plane(new THREE.Vector3(0, 0, -1), onePlusEpsilon));
-    
+        const farPlane = new THREE.Plane();
+        farPlane.setFromCoplanarPoints(frustumPoints[5],
+                                        frustumPoints[4],
+                                        frustumPoints[6]);
+        farPlane.constant += epsilon;
+        clippingPlanes.push(farPlane);
+
         return clippingPlanes;
     }
 }

@@ -28,44 +28,8 @@ function init() {
 	window.addEventListener('resize', onWindowResize);
 }
 
-window.onFullscreenButtonPressed = function(viewName) {
-	const activeView = viewManager.getActiveView();
-	const button = document.getElementById(viewName + "Button");
-	if(activeView != -1) {
-		button.textContent = "Fullscreen";
-		viewManager.setActiveView(-1);
-	}
-	else {
-		if(!viewManager.setActiveView(viewManager.getViewByName(viewName))) {
-			console.error("Failed to set active view with name", viewName);
-		}
-		else {
-			button.textContent = "Back to Four Views";
-		}
-	}
-}
-
-window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
-	const view = viewManager.getViewByName(viewName);
-
-	viewManager.swapViewIfOrtho(view, probeScene.getFarPlane());
-
-	const mode = viewManager.getViewOrthoMode(view);
-	const button = document.getElementById(buttonID);
-
-	if(mode == "elevation") {
-		button.textContent = "Elevation (Click to Swap to Plan)";
-	}
-	else if(mode == "plan") {
-		button.textContent = "Plan (Click to Swap to Elevation)";
-	}
-	else {
-		console.error("Error: Non-Ortho View Accessed by Ortho Swap Button");
-	}
-}
-
 function onWindowResize() {
-	viewManager.updateViewSizes();
+	viewManager.updateViews();
 }
 
 // Modified from https://threejs.org/examples/webgl_multiple_views
@@ -74,6 +38,8 @@ function render() {
 	const activeView = viewManager.getActiveView();
 
 	viewManager.updateViewSizes();
+
+	probeScene.tickFrustumDistortionMatrix();
 
 	// If active view is not set, render all four views.
 	if(activeView == -1) {
@@ -103,11 +69,9 @@ function render() {
 }
 
 function animate() {
-
 	render();
 
 	requestAnimationFrame( animate );
-
 }
 
 init();
