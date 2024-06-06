@@ -84,13 +84,29 @@
 								<option value="normal">Normal Shading </option>
 							</select>
 						</div>
+						<div class="subsubmenu-item" id="colorPickObjMenu">
+							<label for="colorpickObjColor">Object Color:</label>
+							<input type='color' id="colorpickObjColor"  class="colorpicker" value="#FFFFFF">
+						</div>
 						<div class="submenu-item">
 							<label for="shadingDoubleSidedCheckbox">Double-Sided Material:</label>
 							<input type='checkbox' id="shadingDoubleSidedCheckbox" class="checkbox" checked>
 						</div>
+					</div>
+
+					<!-- UI Settings -->
+					<div class="submenu-label" id="uiControlsLabel">
+						UI Settings
+					</div>
+					<div class="submenu" id="shadingControls">
 						<div class="submenu-item">
-							<label for="colorpickObjColor">Object Color:</label>
-							<input type='color' id="colorpickObjColor"  class="colorpicker" value="#FFFFFF">
+							<label for="showAxesCheckbox"> Show Axes: </label>
+							<input type='checkbox' id="showAxesCheckbox" class="checkbox">
+						</div>
+						<div class="submenu-item">
+							<label for="nearFarPlaneOpacitySlider"> Clipping Plane Opacity: </label>
+							<input type="number" id="nearFarPlaneOpacityEntry" min="0" max="1" value="0.2" title="Clipping Plane Opacity" class="standard-number">
+							<input type="range" id="nearFarPlaneOpacitySlider" min="0" max="1" step="0.01" value="0.2" class="standard-slider">
 						</div>
 					</div>
 				</div>

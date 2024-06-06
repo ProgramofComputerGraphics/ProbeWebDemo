@@ -135,6 +135,13 @@ export class ViewManager {
             // "updateViewCameras()" on every render frame, so it need not be
             // accurate here.
             camera = new THREE.PerspectiveCamera(view.fov, window.innerWidth / window.innerHeight, 1, 1000);
+            
+            // TODO - Automatically pull default values instead of hard-coding them
+            if(view.name=="cameraView"){
+                camera.near = 1;
+                camera.far = 10;
+            }
+            
             camera.up.fromArray(view.up);
         }
         camera.position.fromArray(view.eye);

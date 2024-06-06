@@ -101,11 +101,12 @@ function initOrthoSideLength(probeScene, viewManager, cameraViewIndex) {
     orthoSideSlider.addEventListener("input", updateOrthoSideLength);
 }
 
-function initNearPlaneEntry(probeScene) {
+function initNearPlaneEntry(probeScene, viewManager, cameraViewIndex) {
     const nearNumber = document.getElementById("nearEntry");
 
     let updateNearPlane = (event) => {
         probeScene.setNearPlane(nearNumber.value);
+        viewManager.getViewCamera(cameraViewIndex).near = nearNumber.value;
     }
 
     nearNumber.addEventListener("change", updateNearPlane)
@@ -116,6 +117,7 @@ function initFarPlaneEntry(probeScene) {
 
     let updateFarPlane = (event) => {
         probeScene.setFarPlane(farNumber.value);
+        viewManager.getViewCamera(cameraViewIndex).far = farNumber.value;
     }
 
     farNumber.addEventListener("change", updateFarPlane)
@@ -171,9 +173,16 @@ function initTransformWidgetButtons(probeScene, viewManager) {
 
 function initShadingModeDropdown(probeScene) {
     const shadingDropdown = document.getElementById("shadingDropdown");
-    
+    const shadingColorMenu = document.getElementById("colorPickObjMenu")
+
     shadingDropdown.addEventListener("change", () => { 
         probeScene.setShadingMode(shadingDropdown.value); 
+        if(shadingDropdown.value == "normal") {
+            shadingColorMenu.className = "hidden";
+        }
+        else {
+            shadingColorMenu.className = "subsubmenu-item";
+        }
     });
 }
 
@@ -191,6 +200,36 @@ function initShadingColorSelect(probeScene) {
     shadingColor.addEventListener("input", (event) => { 
         probeScene.setObjectColor(event.target.value); 
     });
+}
+
+
+// UI Settings Functions
+
+function initShowAxesCheckbox(probeScene) {
+    const showAxesCheckbox = document.getElementById("showAxesCheckbox");
+
+    showAxesCheckbox.addEventListener("change", () => {
+        probeScene.setShowAxes(showAxesCheckbox.checked);
+    });
+}
+
+function initNearFarPlaneOpacitySlider(probeScene) {
+    const opacityNumber = document.getElementById("nearFarPlaneOpacityEntry");
+    const opacitySlider = document.getElementById("nearFarPlaneOpacitySlider");
+
+    let updateOpacity = (event) => {
+        // Sync HTML elements
+        if(event.srcElement.className == "standard-slider")
+            opacityNumber.value = opacitySlider.value;
+        else 
+            opacitySlider.value = opacityNumber.value;
+        
+        // Update scene camera
+        probeScene.setNearFarOpacity(opacityNumber.value); 
+    }
+
+    opacityNumber.addEventListener("change", updateOpacity);
+    opacitySlider.addEventListener("input", updateOpacity);
 }
 
 
@@ -213,5 +252,9 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     initShadingModeDropdown(probeScene);
     initMaterialDoubleSidedCheckbox(probeScene);
     initShadingColorSelect(probeScene);
+
+    // UI Settings
+    initShowAxesCheckbox(probeScene);
+    initNearFarPlaneOpacitySlider(probeScene);
     
 }

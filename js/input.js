@@ -11,6 +11,7 @@ const DRAG_DELTA_THRESHOLD_SQ = 20;
 export class InputManager {
     #probeScene;
     #viewManager;
+    #cameraViewIndex;
 
     #mouseDownEvents;
     #mouseDownViews;
@@ -21,7 +22,7 @@ export class InputManager {
 
     #keyDownEvents;
 
-    constructor(probeScene, viewManager) {
+    constructor(probeScene, viewManager, cameraViewIndex) {
         // Initialize instance variables
         this.#mouseDownEvents = {}; // Stores the mouse buttons that are currently pressed
         this.#mouseDownViews = {}; // Stores the index of the view that was hovered when each active mouse button was pressed
@@ -32,6 +33,7 @@ export class InputManager {
 
         this.#probeScene = probeScene;
         this.#viewManager = viewManager;
+        this.#cameraViewIndex = cameraViewIndex;
 
         this.#keyDownEvents = {};
 
@@ -244,8 +246,9 @@ export class InputManager {
                 }
 
                 // Click the object in the scene, then fall into default case
+                const cameraViewCamera = this.#viewManager.getViewCamera(this.#cameraViewIndex);
                 const gumball = this.#probeScene.clickObject(this.#mouseDownObjects[mouseButton], 
-                                                            viewData, viewIndex);
+                                                            viewData, viewIndex,cameraViewCamera);
 
                 if(gumball != null) {
                     gumball.addEventListener("mouseDown", (_) => {

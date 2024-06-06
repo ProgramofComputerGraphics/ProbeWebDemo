@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
+import { AxesObject } from './axesObject.js';
 import { loadFile } from './file.js';
 import { Frustum, testBoolean } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
@@ -25,6 +26,8 @@ export class ProbeScene {
     #objShadingMode;
 
     #frustum;
+    #realSceneAxes;
+    #imageSpaceSceneAxes;
 
     #gumball;
     #gumballView;
@@ -48,7 +51,7 @@ export class ProbeScene {
             envMapIntensity : 0,
             lightMapIntensity: 0,
             flatShading : true,
-            side : THREE.DoubleSide
+            side : THREE.DoubleSide,
         });
 
         this.#normalMaterial = new THREE.ShaderMaterial({
@@ -99,12 +102,18 @@ export class ProbeScene {
 
         this.#frustum.addFrustumToScene(this.#realScene);
 
+        this.#realSceneAxes = new AxesObject(0.5);
+        this.#realSceneAxes.addToScene(this.#realScene);
+
         initSceneLights(this.#realScene);
     }
 
     #initImagespaceScene() {
         // Initialize scene
         this.#imageSpaceScene = new THREE.Scene();
+
+        this.#imageSpaceSceneAxes = new AxesObject(0.25);
+        this.#imageSpaceSceneAxes.addToScene(this.#imageSpaceScene);
 
         initSceneLights(this.#imageSpaceScene);
     }
@@ -233,6 +242,11 @@ export class ProbeScene {
         this.#frustum.setVisible(showFrustum);
     }
 
+    setShowAxes(showAxes) {
+        this.#realSceneAxes.setVisible(showAxes);
+        this.#imageSpaceSceneAxes.setVisible(showAxes);
+    }
+
     #updateObjectMaterial() {
         if(this.#object instanceof THREE.Mesh) {
             this.#object.material = this.#objMaterial;
@@ -301,6 +315,10 @@ export class ProbeScene {
         this.#objMaterial.needsUpdate = true;
     }
 
+    setNearFarOpacity(opacity) {
+        this.#frustum.setNearFarOpacity(opacity);
+    }
+
     raycastScene(screenCoords, camera, imagespace) {
         raycaster.setFromCamera(screenCoords, camera);
 
@@ -312,7 +330,7 @@ export class ProbeScene {
         }
     }
 
-    #createGumball(object, view, viewIndex) { 
+    #createGumball(object, view, viewIndex, cameraViewCamera) { 
         // Create a new transform control widget
         this.#gumball = new TransformControls(view.camera, view.renderer.domElement);
 
@@ -342,6 +360,7 @@ export class ProbeScene {
                     this.#frustum.setNear(z);
                     const nearElement = document.getElementById("nearEntry");
                     nearElement.value = z;
+                    cameraViewCamera.near = z;
                 }
                 else {
                     object.position.setZ(this.#frustum.getNear());
@@ -360,6 +379,7 @@ export class ProbeScene {
                     this.#frustum.setFar(z);
                     const farElement = document.getElementById("farEntry");
                     farElement.value = z;
+                    cameraViewCamera.far = z;
                 }
                 else {
                     object.position.setZ(this.#frustum.getFar());
@@ -368,6 +388,8 @@ export class ProbeScene {
         }
         else {
             this.#gumball.mode = this.#gumballMode;
+            this.#gumball._gizmo.gizmo.translate.children[0].scale.set(-1,-1,-1);
+            console.log(this.#gumball._gizmo.gizmo.translate.children[0]);
         }
 
         // Add gumball to scene
@@ -420,7 +442,7 @@ export class ProbeScene {
         }
     }
 
-    clickObject(object, view, viewIndex) {
+    clickObject(object, view, viewIndex, cameraViewCamera) {
         // Destroy the gumball and return if the object cannot be clicked,
         // or if the view does not have the gumball enabled.
         if(!object.userData || !object.userData.clickable || !view.gumball) {
@@ -440,7 +462,7 @@ export class ProbeScene {
         }
 
         // Create a new gumball for the object
-        this.#createGumball(object, view, viewIndex);
+        this.#createGumball(object, view, viewIndex, cameraViewCamera);
 
         return this.#gumball;
     }
@@ -507,7 +529,7 @@ export class ProbeScene {
         return distortedObj;
     }
 
-    renderScene(viewIndex, renderer, camera, showFrustum, linesOnly, imagespace)
+    renderScene(viewIndex, renderer, camera, imagespace, showFrustum, linesOnly, showAxes)
     {
         if(this.#gumballView == viewIndex)
             this.#gumball.visible = true;

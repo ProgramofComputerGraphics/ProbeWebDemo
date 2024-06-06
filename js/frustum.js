@@ -598,6 +598,11 @@ export class Frustum {
         this.#orthoFarPlaneSurface.visible = !linesOnly;
     }
 
+    setNearFarOpacity(opacity) {
+        nearPlaneSurfaceMaterial.opacity = opacity;
+        farPlaneSurfaceMaterial.opacity = opacity;
+    }
+
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
     applyFrustumDistortionToObject(obj) {
