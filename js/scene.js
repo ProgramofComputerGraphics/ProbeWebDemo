@@ -482,6 +482,7 @@ export class ProbeScene {
                                     this.#objectDefaultRotation.z,
                                     "XYZ");
         this.#object.scale.copy(this.#objectDefaultScale);
+        this.#object.updateMatrixWorld();
     }
 
     #setCameraLayers(camera) {
@@ -545,9 +546,11 @@ export class ProbeScene {
         // Set camera layers
         this.#setCameraLayers(camera);
 
+        // Set show frustum
+        this.setShowFrustum(showFrustum);
+
         // If rendering the real scene, just render the scene
         if(!imagespace) {
-            this.setShowFrustum(showFrustum);
             renderer.render(this.#realScene, camera);
         }
         // If rendering the image space scene, create the perspective distorted

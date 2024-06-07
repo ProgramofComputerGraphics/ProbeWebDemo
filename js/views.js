@@ -478,9 +478,19 @@ export class ViewManager {
             return;
         }  
 
+        // If camera aspect is invalid, return early
+        if(camAspect <= 0 || Number.isFinite(camAspect)) {
+            return;
+        }
+
         // Get the view area's aspect ratio
         const viewContainer = this.#getViewRenderArea(viewIndex);
         const viewAreaAspect = viewContainer.clientWidth / viewContainer.clientHeight;
+
+        // If view area aspect is invalid, return early
+        if(viewAreaAspect <= 0 || Number.isFinite(viewAreaAspect)) {
+            return;
+        }
 
         // More accurately an "aspect ratio ratio", this value is the ratio between
         // the camera's aspect ratio and the view area's aspect ratio

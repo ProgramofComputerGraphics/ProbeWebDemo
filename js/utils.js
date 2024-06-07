@@ -7,16 +7,20 @@ export function pointInRectangle(point, rectangle) {
     return containsX && containsY;
 }
 
-export function deepCopyMeshOrLine(meshOrLine) {
+export function deepCopyMeshOrLine(meshOrLine, debug) {
     const distortedObj = meshOrLine.clone(true);
-    distortedObj.geometry = meshOrLine.geometry.clone();
+    distortedObj.geometry = meshOrLine.geometry.clone(true);
 
-    distortedObj.position.copy(meshOrLine.position);
+    distortedObj.position.set(meshOrLine.position.x,
+                            meshOrLine.position.y,
+                            meshOrLine.position.z);
     distortedObj.rotation.set(meshOrLine.rotation.x,
                             meshOrLine.rotation.y,
                             meshOrLine.rotation.z,
                             meshOrLine.rotation.order);
-    distortedObj.scale.copy(meshOrLine.scale);
+    distortedObj.scale.set(meshOrLine.scale.x,
+                            meshOrLine.scale.y,
+                            meshOrLine.scale.z);
     
     return distortedObj;
 }

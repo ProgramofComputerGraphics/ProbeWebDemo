@@ -27,6 +27,12 @@ toDonConvention.set( -1,0,0,0,
                       0,0,0.5,0.5,
                       0,0,0,1 );
 
+let testBoolean = false;
+
+export function setTestBoolean(bool) {
+    testBoolean = !!bool;
+}
+
 export class Frustum {
     #projection;
     
@@ -355,6 +361,7 @@ export class Frustum {
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneLines);
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneSurface);
         this.#perspectiveNearPlane.position.set(0,0,this.#near);
+        this.#perspectiveNearPlane.updateMatrixWorld();
     }
 
     #updatePerspectiveFarPlane() {
@@ -381,6 +388,7 @@ export class Frustum {
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneLines);
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneSurface);
         this.#perspectiveFarPlane.position.set(0,0,this.#far);
+        this.#perspectiveFarPlane.updateMatrixWorld();
     }
 
     #updateOrthoFrustumSideLines() {
@@ -452,6 +460,7 @@ export class Frustum {
         this.#orthoNearPlane.add(this.#orthoNearPlaneLines);
         this.#orthoNearPlane.add(this.#orthoNearPlaneSurface);
         this.#orthoNearPlane.position.set(0,0,this.#near);
+        this.#orthoNearPlane.updateMatrixWorld();
     }
 
     #updateOrthoFarPlane() {
@@ -472,6 +481,7 @@ export class Frustum {
         this.#orthoFarPlane.add(this.#orthoFarPlaneLines);
         this.#orthoFarPlane.add(this.#orthoFarPlaneSurface);
         this.#orthoFarPlane.position.set(0,0,this.#far);
+        this.#orthoFarPlane.updateMatrixWorld();
     }
 
     #updatePerspectiveCamera() {
@@ -688,7 +698,7 @@ export class Frustum {
 
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
-    applyFrustumDistortionToObject(obj) {
+    applyFrustumDistortionToObject(obj, debug) {
         const positionAttribute = obj.geometry.getAttribute("position");
         const vertex = new THREE.Vector3();
 
@@ -748,6 +758,7 @@ export class Frustum {
         obj.scale.set(1,1,1);
 
         obj.geometry.attributes.position.needsUpdate = true;
+
         if(obj.geometry.attributes.normal)
             obj.geometry.attributes.normal.needsUpdate = true;
 
@@ -801,8 +812,8 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#perspectiveFarPlaneLines);
 
-            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
-            this.applyFrustumDistortionToObject(distortedNearPlane);
+            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface, testBoolean);
+            this.applyFrustumDistortionToObject(distortedNearPlane, true);
 
             distortedNearPlane.position.set(0,0,0);
 

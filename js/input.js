@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { pointInRectangle } from "./utils.js";
 
+import { setTestBoolean } from "./frustum.js";
+
 const LMB = 0;
 const MMB = 1;
 const RMB = 2;
@@ -301,6 +303,9 @@ export class InputManager {
                 translateButton.className = "submenu-button";
                 rotateButton.className = "submenu-button";
                 scaleButton.className = "submenu-button-clicked";
+                break;
+            case " ":
+                setTestBoolean(true);
                 break;
             default:
                 console.log("\'" + key + "\' Pressed!");

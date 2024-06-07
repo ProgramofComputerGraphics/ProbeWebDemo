@@ -29,7 +29,7 @@ function init() {
 }
 
 function onWindowResize() {
-	viewManager.updateViews();
+	viewManager.updateViewSizes();
 }
 
 // Modified from https://threejs.org/examples/webgl_multiple_views

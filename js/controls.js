@@ -102,25 +102,35 @@ function initOrthoSideLength(probeScene, viewManager, cameraViewIndex) {
 }
 
 function initNearPlaneEntry(probeScene, viewManager, cameraViewIndex) {
-    const nearNumber = document.getElementById("nearEntry");
+    const nearEntry = document.getElementById("nearEntry");
 
     let updateNearPlane = (event) => {
-        probeScene.setNearPlane(nearNumber.value);
-        viewManager.getViewCamera(cameraViewIndex).near = nearNumber.value;
+        const near = parseFloat(nearEntry.value);
+
+        probeScene.setNearPlane(near);
+        
+        const cameraViewCamera = viewManager.getViewCamera(cameraViewIndex);
+        cameraViewCamera.near = near;
+        cameraViewCamera.updateProjectionMatrix();
     }
 
-    nearNumber.addEventListener("change", updateNearPlane)
+    nearEntry.addEventListener("change", updateNearPlane)
 }
 
-function initFarPlaneEntry(probeScene) {
-    const farNumber = document.getElementById("farEntry");
+function initFarPlaneEntry(probeScene, viewManager, cameraViewIndex) {
+    const farEntry = document.getElementById("farEntry");
 
     let updateFarPlane = (event) => {
-        probeScene.setFarPlane(farNumber.value);
-        viewManager.getViewCamera(cameraViewIndex).far = farNumber.value;
+        const far = parseFloat(farEntry.value);
+        
+        probeScene.setFarPlane(far);
+        
+        const cameraViewCamera = viewManager.getViewCamera(cameraViewIndex);
+        cameraViewCamera.far = far;
+        cameraViewCamera.updateProjectionMatrix();
     }
 
-    farNumber.addEventListener("change", updateFarPlane)
+    farEntry.addEventListener("change", updateFarPlane)
 }
 
 
@@ -131,8 +141,6 @@ function initTransformResetButton(probeScene) {
     transformResetButton.addEventListener("click", () => {
         probeScene.resetObjectTransform();
     });
-
-    console.log("Reset Clicked!");
 }
 
 function initTransformWidgetButtons(probeScene, viewManager) {
