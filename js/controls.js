@@ -177,6 +177,7 @@ function initTransformWidgetButtons(probeScene, viewManager) {
     scaleButton.addEventListener("click", setGumballModeToScale);
 }
 
+
 // Shading Functions
 
 function initShadingModeDropdown(probeScene) {
@@ -282,8 +283,26 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
             }
         }
     }
+
+    window.onOrthoSwapRealImageButtonPressed = function(viewName, buttonID) {
+        const view = viewManager.getViewByName(viewName);
     
-    window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
+        const viewData = viewManager.getViewData()[view];
+    
+        viewData.imagespace = !viewData.imagespace;
+        const button = document.getElementById(buttonID);
+
+        if(viewData.imagespace) {
+            button.textContent = "Imagespace View";
+            button.title = "Click to Sync with Real View"
+        }
+        else {
+            button.textContent = "Real View";
+            button.title = "Click to Sync with Imagespace View";
+        }
+    }
+    
+    window.onOrthoSwapElevationPlanButtonPressed = function(viewName, buttonID) {
         const view = viewManager.getViewByName(viewName);
     
         viewManager.swapViewIfOrtho(view, probeScene.getFarPlane());
@@ -292,10 +311,12 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
         const button = document.getElementById(buttonID);
     
         if(mode == "elevation") {
-            button.textContent = "Elevation (Click to Swap to Plan)";
+            button.textContent = "Elevation";
+            button.title = "Click to Swap to Plan"
         }
         else if(mode == "plan") {
-            button.textContent = "Plan (Click to Swap to Elevation)";
+            button.textContent = "Plan";
+            button.title = "Click to Swap to Elevation";
         }
         else {
             console.error("Error: Non-Ortho View Accessed by Ortho Swap Button");

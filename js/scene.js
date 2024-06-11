@@ -396,7 +396,7 @@ export class ProbeScene {
         }
         else {
             this.#gumball.mode = this.#gumballMode;
-            this.#gumball._gizmo.gizmo.translate.children[0].scale.set(-1,-1,-1);
+            this.#gumball._gizmo.gizmo.translate.children[0].scale.set(-1,1,1);
             console.log(this.#gumball._gizmo.gizmo.translate.children[0]);
         }
 
@@ -573,6 +573,8 @@ export class ProbeScene {
             if(showFrustum) {
                 this.#frustum.removeDistortedFrustumFromScene(this.#imageSpaceScene);
             }
+
+            renderer.clippingPlanes = [];
         }
 
         if(this.#gumballView == viewIndex)

@@ -463,7 +463,7 @@ export class ViewManager {
         // Return early if view does not allow for camera outline
         if(!this.#views[viewIndex].renderCameraOutline)
             return;
-        
+
         // Get the camera's aspect ratio (or the equivalent property for an orthographic camera)
         const camera = this.getViewCamera(viewIndex);
 
@@ -479,7 +479,7 @@ export class ViewManager {
         }  
 
         // If camera aspect is invalid, return early
-        if(camAspect <= 0 || Number.isFinite(camAspect)) {
+        if(camAspect <= 0 || !Number.isFinite(camAspect)) {
             return;
         }
 
@@ -488,7 +488,7 @@ export class ViewManager {
         const viewAreaAspect = viewContainer.clientWidth / viewContainer.clientHeight;
 
         // If view area aspect is invalid, return early
-        if(viewAreaAspect <= 0 || Number.isFinite(viewAreaAspect)) {
+        if(viewAreaAspect <= 0 || !Number.isFinite(viewAreaAspect)) {
             return;
         }
 
