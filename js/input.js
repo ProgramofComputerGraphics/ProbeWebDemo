@@ -102,7 +102,7 @@ export class InputManager {
         return currentObj;
     }
 
-    #getFirstHoveredObject(pointer, camera, imagespace){
+    #getFirstHoveredObject(pointer, camera, imagespace, clickLines){
         // Raycast into scene
         const intersects = this.#probeScene.raycastScene(pointer, 
                                                         camera, 
@@ -122,8 +122,8 @@ export class InputManager {
                 continue;
             }
 
-            // Skip any line objects (TODO - Possibly Remove)
-            if(closestIntersection.object instanceof THREE.Line) {
+            // Skip any line objects if clickLines argument is false
+            if(closestIntersection.object instanceof THREE.Line && !clickLines) {
                 continue;
             }
             
@@ -181,7 +181,9 @@ export class InputManager {
         const pointer = this.#viewManager.normalizePointerToView(mousePos, viewIndex);
 
         // Get hovered object
-        const object = this.#getFirstHoveredObject(pointer, viewData.camera, viewData.imagespace);
+        const object = this.#getFirstHoveredObject(pointer, viewData.camera, 
+                                                    viewData.imagespace,
+                                                    viewData.clickLines);
 
         // Update state variables
         this.#mouseDownEvents[mouseButton] = mouseEvent;

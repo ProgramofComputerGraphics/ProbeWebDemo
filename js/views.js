@@ -34,6 +34,7 @@ export class ViewManager {
                 rotatable: true,
                 imagespace: false,
                 gumball: true,
+                clickLines: false,
                 showFrustum: true,
             },
             {
@@ -49,6 +50,7 @@ export class ViewManager {
                 rotatable: false,
                 imagespace: false,
                 gumball: true,
+                clickLines: true,
                 showFrustum: true,
             },
             {

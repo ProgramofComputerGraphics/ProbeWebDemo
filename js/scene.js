@@ -12,6 +12,7 @@ const defaultGeo = new THREE.BoxGeometry(1,1,1);
 const loader = new OBJLoader();
 
 const raycaster = new THREE.Raycaster();
+raycaster.params.Line.threshold = 0.1;
 
 export class ProbeScene {
     #object;
