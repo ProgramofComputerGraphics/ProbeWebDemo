@@ -36,6 +36,30 @@ function initLoadObjectFileEntry(probeScene) {
     });
 }
 
+function initExportObjectButton(probeScene) {
+    const exportObjectbutton = document.getElementById("exportObjectButton");
+    
+    exportObjectbutton.addEventListener('click', () =>{
+        const objText = probeScene.saveDistortedObjectToText();
+
+        // Create a blob from the text
+        const blob = new Blob([objText], { type: 'text/plain' });
+
+        // Create a link element
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+
+        // Set the file name for the download
+        a.download = 'distorted.obj';
+
+        // Programmatically click the link to trigger the download
+        a.click();
+
+        // Release the object URL to free up memory
+        URL.revokeObjectURL(a.href);
+    });
+}
+
 
 // Frustum Control Functions
 
@@ -286,6 +310,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     // Object Import/Export Controls
     initResetToCubeButton(probeScene);
     initLoadObjectFileEntry(probeScene);
+    initExportObjectButton(probeScene);
 
     // Frustum Controls
     initProjectionDropdown(probeScene, viewManager, cameraViewIndex);

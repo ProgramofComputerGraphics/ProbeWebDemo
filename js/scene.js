@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { AxesObject } from './axesObject.js';
@@ -9,7 +10,9 @@ import { Frustum } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
+
 const loader = new OBJLoader();
+const exporter = new OBJExporter();
 
 const raycaster = new THREE.Raycaster();
 raycaster.params.Line.threshold = 0.1;
@@ -186,6 +189,16 @@ export class ProbeScene {
 
         const object = loader.parse(objectText);  
         this.#addLoadedObjectToScene(object);
+    }
+
+    saveDistortedObjectToText() {
+        const distortedObj = this.#getDistortedObject();
+
+        const distortedObjText = exporter.parse(distortedObj);
+
+        this.#removeDistortedObject(distortedObj);
+
+        return distortedObjText;
     }
 
     getProjectionMode() {
