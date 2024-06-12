@@ -972,7 +972,7 @@ export class Frustum {
                                         frustumPoints[3],
                                         frustumPoints[4]);
         leftPlane.constant += epsilon;
-        //clippingPlanes.push(leftPlane);
+        clippingPlanes.push(leftPlane);
 
         // Left-side plane (backwards from expected due to OpenGL convention)
         const rightPlane = new THREE.Plane();
@@ -980,7 +980,7 @@ export class Frustum {
                                         frustumPoints[1],
                                         frustumPoints[5]);
         rightPlane.constant += epsilon;
-        //clippingPlanes.push(rightPlane);
+        clippingPlanes.push(rightPlane);
 
         // Bottom-side plane
         const bottomPlane = new THREE.Plane();
@@ -988,7 +988,7 @@ export class Frustum {
                                         frustumPoints[0],
                                         frustumPoints[4]);
         bottomPlane.constant += epsilon;
-        //clippingPlanes.push(bottomPlane);
+        clippingPlanes.push(bottomPlane);
 
         // Top-side plane
         const topPlane = new THREE.Plane();
@@ -996,7 +996,7 @@ export class Frustum {
                                         frustumPoints[2],
                                         frustumPoints[6]);
         topPlane.constant += epsilon;
-        //clippingPlanes.push(topPlane);
+        clippingPlanes.push(topPlane);
 
         // Near plane
         const nearPlane = new THREE.Plane();
@@ -1004,7 +1004,7 @@ export class Frustum {
                                         frustumPoints[1],
                                         frustumPoints[2]);
         nearPlane.constant += epsilon;
-        //clippingPlanes.push(nearPlane);
+        clippingPlanes.push(nearPlane);
 
         // Far plane
         const farPlane = new THREE.Plane();
@@ -1012,7 +1012,7 @@ export class Frustum {
                                         frustumPoints[4],
                                         frustumPoints[6]);
         farPlane.constant += epsilon;
-        //clippingPlanes.push(farPlane);
+        clippingPlanes.push(farPlane);
 
         return clippingPlanes;
     }

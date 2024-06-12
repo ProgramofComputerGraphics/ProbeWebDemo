@@ -356,7 +356,7 @@ export class ProbeScene {
 
             this.#gumball.addEventListener("change", (event) => {
                 const z = object.position.z;
-                if(z < 0 && z > this.#frustum.getFar()){
+                if(z < 0 && z > -this.#frustum.getFar()){
                     this.#frustum.setNear(-z);
                     const nearElement = document.getElementById("nearEntry");
                     nearElement.value = -z;

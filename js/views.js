@@ -155,8 +155,6 @@ export class ViewManager {
             camera.lookAt(new THREE.Vector3(0,0,-5))
         };
 
-        console.log(camera.position);
-
         camera.updateProjectionMatrix();
         view.camera = camera;
     }
