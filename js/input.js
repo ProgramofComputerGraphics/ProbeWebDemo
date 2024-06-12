@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { pointInRectangle } from "./utils.js";
 
+import { readFile} from "./file.js";
+import { pointInRectangle } from "./utils.js";
 import { setTestBoolean } from "./frustum.js";
 
 const LMB = 0;
@@ -51,6 +52,21 @@ export class InputManager {
         window.addEventListener("mousemove", (event) => {
             this.#currentMousePosition.x = event.clientX;
             this.#currentMousePosition.y = event.clientY;
+        });
+
+        // Drag and drop support for the entire webpage
+        window.addEventListener('dragover', (event) => {
+            event.preventDefault();
+        });
+
+        window.addEventListener("drop", async (event) => {
+            event.preventDefault();
+            
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                const fileText = await readFile(file);
+                probeScene.loadObjectFromText(fileText);
+            }
         });
     }
 

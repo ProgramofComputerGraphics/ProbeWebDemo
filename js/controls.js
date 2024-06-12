@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { readFile } from "./file.js";
 
 // Object Import/Export Functions
 
@@ -20,15 +21,8 @@ function initLoadObjectFileEntry(probeScene) {
         // Get the file from the input element
         const file = loadObjectFileEntry.files[0];
         if (file) {
-            // Create a FileReader to read the file
-            const reader = new FileReader();
-
             // Set up a Promise to handle the file read process
-            fileText = await new Promise((resolve, reject) => {
-                reader.onload = (event) => resolve(event.target.result);
-                reader.onerror = (error) => reject(error);
-                reader.readAsText(file);
-            });
+            fileText = await readFile(file);
 
             // Call the probeScene's loadObjectFromText method with the file content
             probeScene.loadObjectFromText(fileText);
@@ -59,7 +53,6 @@ function initExportObjectButton(probeScene) {
         URL.revokeObjectURL(a.href);
     });
 }
-
 
 // Frustum Control Functions
 

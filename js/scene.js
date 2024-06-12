@@ -5,7 +5,7 @@ import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { AxesObject } from './axesObject.js';
-import { loadFile } from './file.js';
+import { loadLocalFile } from './file.js';
 import { Frustum } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
 
@@ -61,8 +61,8 @@ export class ProbeScene {
         this.#normalMaterial = new THREE.ShaderMaterial({
             clipping : true,
             side : THREE.DoubleSide,
-            vertexShader : loadFile("shaders/normalVertexShader.vs"),
-            fragmentShader : loadFile("/shaders/normalFragmentShader.fs")
+            vertexShader : loadLocalFile("shaders/normalVertexShader.vs"),
+            fragmentShader : loadLocalFile("/shaders/normalFragmentShader.fs")
         });
         
         this.#normalMaterial.extensions.clipCullDistance = true;

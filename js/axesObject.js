@@ -1,10 +1,10 @@
 import * as THREE from "three"
 
-import { loadFile } from "./file.js";
+import { loadLocalFile } from "./file.js";
 
 const unitY = new THREE.Vector3(0,1,0);
 
-const fragmentShader = loadFile("/shaders/axisFragmentShader.fs");
+const fragmentShader = loadLocalFile("/shaders/axisFragmentShader.fs");
 
 export class AxesObject {
     #axesObjectGroup;
