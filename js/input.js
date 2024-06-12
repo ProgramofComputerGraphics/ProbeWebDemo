@@ -246,6 +246,12 @@ export class InputManager {
                     return;
                 }
 
+                // If the gumball is active but not in the view that was clicked,
+                // clear the gumball 
+                if(viewIndex != -1 && viewIndex != this.#probeScene.getGumballView()) {
+                    this.#probeScene.clearGumball();
+                }
+
                 // Click the object in the scene, then fall into default case
                 const cameraViewCamera = this.#viewManager.getViewCamera(this.#cameraViewIndex);
                 const gumball = this.#probeScene.clickObject(this.#mouseDownObjects[mouseButton], 

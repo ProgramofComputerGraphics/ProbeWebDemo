@@ -79,7 +79,7 @@ function initProjectionDropdown(probeScene, viewManager, cameraViewIndex) {
             orthoFrustumControls.className = "";
         }
 
-        camera.lookAt(new THREE.Vector3(0,0,1));
+        camera.lookAt(new THREE.Vector3(0,0,-1));
         viewManager.setViewCamera(cameraViewIndex, camera);
     }
 

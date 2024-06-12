@@ -64,7 +64,7 @@ export class ViewManager {
                 gumball: false,
                 showFrustum: false,
                 renderCameraOutline: true,
-                renderCameraOutlineColor: new THREE.Color("#0000ff"),
+                renderCameraOutlineColor: new THREE.Color("#4040ff"),
             },
             {
                 name: "imageView",
