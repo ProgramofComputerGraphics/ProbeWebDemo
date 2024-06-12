@@ -356,14 +356,14 @@ export class ProbeScene {
 
             this.#gumball.addEventListener("change", (event) => {
                 const z = object.position.z;
-                if(z > 0 && z < this.#frustum.getFar()){
-                    this.#frustum.setNear(z);
+                if(z < 0 && z > this.#frustum.getFar()){
+                    this.#frustum.setNear(-z);
                     const nearElement = document.getElementById("nearEntry");
-                    nearElement.value = z;
-                    cameraViewCamera.near = z;
+                    nearElement.value = -z;
+                    cameraViewCamera.near = -z;
                 }
                 else {
-                    object.position.setZ(this.#frustum.getNear());
+                    object.position.setZ(-this.#frustum.getNear());
                 }
             });
         }
@@ -375,14 +375,14 @@ export class ProbeScene {
 
             this.#gumball.addEventListener("change", (event) => {
                 const z = object.position.z;
-                if(z > this.#frustum.getNear()) {
-                    this.#frustum.setFar(z);
+                if(z < this.#frustum.getNear()) {
+                    this.#frustum.setFar(-z);
                     const farElement = document.getElementById("farEntry");
-                    farElement.value = z;
-                    cameraViewCamera.far = z;
+                    farElement.value = -z;
+                    cameraViewCamera.far = -z;
                 }
                 else {
-                    object.position.setZ(this.#frustum.getFar());
+                    object.position.setZ(-this.#frustum.getFar());
                 }
             });
         }
