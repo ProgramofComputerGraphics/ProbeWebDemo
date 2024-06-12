@@ -93,7 +93,7 @@ export class ProbeScene {
         this.#initRealWorldScene();
         this.#initImagespaceScene();
 
-        this.#makeDefaultCube();
+        this.setObjectToDefaultCube();
 
     }
 
@@ -122,8 +122,14 @@ export class ProbeScene {
 
     #changeSceneObject(newObject) {
         if(this.#object != null) {
+            for(let i = 0; i < this.#object.children.length; ++i){
+                if(this.#object.children[i].geometry)
+                    this.#object.children[i].geometry.dispose();
+            }
             this.#object.clear();
             this.#realScene.remove(this.#object);
+            if(this.#object.geometry)
+                this.#object.geometry.dispose();
         }
     
         this.#object = newObject;
@@ -131,11 +137,15 @@ export class ProbeScene {
         this.#object.userData.clickable = true;
     }
 
-    #makeDefaultCube() {
+    setObjectToDefaultCube() {
         this.#changeSceneObject(new THREE.Mesh(defaultGeo, this.#objMaterial));
     
         // Set default object tranformation for default cube
-        this.#objectDefaultPosition.set(0,0,-2.5);
+        const near = this.#frustum.getNear();
+        const far = this.#frustum.getFar();
+
+        const cubeZ = -Math.max(Math.min(near + 1.5, (near + far) / 2), 2);
+        this.#objectDefaultPosition.set(0,0,cubeZ);
         this.#objectDefaultRotation.set(0,0,0,"XYZ");
         this.#objectDefaultScale.set(1,1,1);
 

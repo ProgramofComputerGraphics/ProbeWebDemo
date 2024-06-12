@@ -2,6 +2,15 @@ import * as THREE from "three";
 
 
 // Object Import/Export Functions
+
+function initResetToCubeButton(probeScene){
+    const translateButton = document.getElementById("resetToCube");
+
+    translateButton.addEventListener("click", () => {
+        probeScene.setObjectToDefaultCube();
+    });
+}
+
 function initLoadObjectFileEntry(probeScene) {
     const loadObjectFileEntry = document.getElementById("loadObjectFileEntry");
 
@@ -162,6 +171,7 @@ function initFarPlaneEntry(probeScene, viewManager, cameraViewIndex) {
 
 
 // Transformation Functions
+
 function initTransformResetButton(probeScene) {
     const transformResetButton = document.getElementById("transformResetButton");
     
@@ -274,6 +284,7 @@ function initNearFarPlaneOpacitySlider(probeScene) {
 export function initControls(probeScene, viewManager, cameraViewIndex) {
     
     // Object Import/Export Controls
+    initResetToCubeButton(probeScene);
     initLoadObjectFileEntry(probeScene);
 
     // Frustum Controls
