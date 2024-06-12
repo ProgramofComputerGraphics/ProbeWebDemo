@@ -70,7 +70,7 @@ export class ViewManager {
                 name: "imageView",
                 containerID: "imageViewContainer",
                 // background: new THREE.Color().setRGB( 0.7, 0.5, 0.5, THREE.SRGBColorSpace ),
-                eye: [-12 , 3, -2 ],
+                eye: [12 , 3, 2 ],
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
                 vDist: 2.5,
@@ -149,7 +149,7 @@ export class ViewManager {
         // Define the target for the camera
         if(view.imagespace) {
             camera.name = view.name;
-            camera.lookAt(new THREE.Vector3(0,0,0.5));
+            camera.lookAt(new THREE.Vector3(0,0,-0.5));
         }
         else {
             camera.lookAt(new THREE.Vector3(0,0,-5))
@@ -185,7 +185,7 @@ export class ViewManager {
         
         // Define the target for the camera
         if(view.imagespace) {
-            cameraControls.target = new THREE.Vector3(0,0,0.5);
+            cameraControls.target = new THREE.Vector3(0,0,-0.5);
         }
         else {
             cameraControls.target = new THREE.Vector3(0,0,-5);
@@ -324,6 +324,13 @@ export class ViewManager {
         }
 
         return false;
+    }
+
+    getViewCameraControls(viewIndex) {
+        if (viewIndex >= 0 && viewIndex < this.#views.length)
+            return this.#views[viewIndex].cameraControls;
+
+        return null;
     }
 
     getViewOrthoMode(viewIndex) {

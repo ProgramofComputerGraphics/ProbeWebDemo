@@ -16,9 +16,9 @@ const farPlaneSurfaceMaterial = new THREE.MeshBasicMaterial({color : 0xe04040,
                                                             side : THREE.DoubleSide});
 
 const toDonConvention = new THREE.Matrix4();
-toDonConvention.set( -1,0,0,0,
+toDonConvention.set( 1,0,0,0,
                       0,1,0,0,
-                      0,0,0.5,0.5,
+                      0,0,-0.5,-0.5,
                       0,0,0,1 );
 
 let testBoolean = false;
@@ -657,7 +657,6 @@ export class Frustum {
             }
             else {
                 this.#distortionMatrix.identity();
-                this.#distortionMatrix.scale(new THREE.Vector4(1,1,-1,1));
             }
             return;
         }
@@ -669,7 +668,6 @@ export class Frustum {
         fullDistortMatrix.premultiply(toDonConvention);
 
         const noDistortMatrix = new THREE.Matrix4();
-        noDistortMatrix.scale(new THREE.Vector4(1,1,-1,1));
 
         let t = (now - this.#transitionStart) / (this.#transitionDuration);
         

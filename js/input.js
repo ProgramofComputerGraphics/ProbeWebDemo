@@ -19,6 +19,8 @@ export class InputManager {
     #mouseDownPositions;
     #mouseDownObjects;
 
+    #currentMousePosition;
+
     #gumballActive;
 
     #keyDownEvents;
@@ -29,6 +31,8 @@ export class InputManager {
         this.#mouseDownViews = {}; // Stores the index of the view that was hovered when each active mouse button was pressed
         this.#mouseDownPositions = {}; // Stores the mouse positions within the view that was hovered when each active mouse button was pressed
         this.#mouseDownObjects = {}; // Stores the objects that were beneath the pointer when each active mouse button was pressed
+
+        this.#currentMousePosition = new THREE.Vector2(0,0);
 
         this.gumballActive = false;
 
@@ -43,6 +47,11 @@ export class InputManager {
         window.addEventListener("mouseup", (event) => { this.mouseUp(event) });
         window.addEventListener("keydown", (event) => { this.keyDown(event) });
         window.addEventListener("keyup", (event) => { this.keyUp(event) });
+
+        window.addEventListener("mousemove", (event) => {
+            this.#currentMousePosition.x = event.clientX;
+            this.#currentMousePosition.y = event.clientY;
+        });
     }
 
     #checkIfAncestor(potentialAncestor, object) {
@@ -318,6 +327,55 @@ export class InputManager {
                 break;
             case "Shift":
                 this.#probeScene.setGumballSnap(false);
+                break;
+            case "c":
+                // The effect of this function is to pan the camera such that the
+                // frustum is now centered in the view
+
+                // Store necessary data/objects in local variables
+                const viewIndex = this.#viewManager.getHoveredView(this.#currentMousePosition);
+                const viewData = this.#viewManager.getViewData()[viewIndex];
+                const cam = viewData.camera;
+                const camControls = viewData.cameraControls;
+
+                // Break early if camera controls are not defined for the given view
+                if(!camControls)
+                    break;
+
+                // Compute reset z position based on current frustum/whether the view
+                // shows the real scene or the imagespace scene
+                let targetZ;
+                if(viewData.imagespace)
+                    targetZ = -0.5;
+                else
+                    targetZ = -this.#probeScene.getFarPlane()/2;
+
+                // Create the vector for the new camera target
+                const target = new THREE.Vector3(0,0,targetZ);
+
+                // Compute the camera's current displacement from the target
+                const disp = new THREE.Vector3().subVectors(cam.position, target);
+
+                // Get the camera's forward vector
+                const lookAtVector = new THREE.Vector3(0,0,-1);
+                lookAtVector.applyQuaternion(cam.quaternion).normalize();
+
+                // Compute the length of the camera displacement's projection
+                // onto the camera's forward vector
+                const projDisp = disp.dot(lookAtVector);
+                
+                // Set the new position to the projected displacement vector
+                // added to the target
+                const newPos = new THREE.Vector3().addVectors(
+                    lookAtVector.multiplyScalar(projDisp),
+                    target
+                );
+
+                // Set the camera/camera control position/target variables 
+                cam.position.copy(newPos);
+                cam.lookAt(target);
+                camControls.target = target;
+                camControls.update();
                 break;
             case " ":
                 setTestBoolean(true);
