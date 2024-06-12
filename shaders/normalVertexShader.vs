@@ -1,5 +1,7 @@
 #include <clipping_planes_pars_vertex>
 
+uniform bool imagespace;
+
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
 varying vec3 vCameraPos;

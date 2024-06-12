@@ -57,6 +57,9 @@ export class ProbeScene {
         this.#normalMaterial = new THREE.ShaderMaterial({
             clipping : true,
             side : THREE.DoubleSide,
+            uniforms: {
+                imagespace: {value: false}
+            },
             vertexShader : loadFile("shaders/normalVertexShader.vs"),
             fragmentShader : loadFile("/shaders/normalFragmentShader.fs")
         });
@@ -117,6 +120,8 @@ export class ProbeScene {
                                                     [true, false, false]);
         this.#imageSpaceSceneAxes.addToScene(this.#imageSpaceScene);
 
+        this.#imageSpaceScene.add(new THREE.AxesHelper());
+
         initSceneLights(this.#imageSpaceScene);
     }
 
@@ -163,7 +168,8 @@ export class ProbeScene {
                 mesh.material = mat;
             }
             catch(error) {
-                console.log("Non-mesh element loaded from OBJ; scene material cannot be applied!");
+                console.log("Non-mesh element loaded from OBJ; " +
+                            "scene material cannot be applied!");
             }
         });
 
@@ -588,6 +594,9 @@ export class ProbeScene {
         // Set show frustum
         this.setShowFrustum(showFrustum);
 
+        // Set ShaderMaterial uniform
+        this.#normalMaterial.uniforms.imagespace.value = !!imagespace;
+
         // If rendering the real scene, just render the scene
         if(!imagespace) {
             renderer.render(this.#realScene, camera);
@@ -627,19 +636,19 @@ function initSceneLights(scene) {
 
     // Create First Front-Side Directional Light
     const dirLightFront1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    dirLightFront1.position.set(1,1,-3);
+    dirLightFront1.position.set(1,1,3);
 
      // Create Second Front-Side Directional Light
      const dirLightFront2 = new THREE.DirectionalLight(0xffffff, 1.2);
-     dirLightFront2.position.set(-1,1,-3);
+     dirLightFront2.position.set(-1,1,3);
 
     // Create First Back-Side Directional Light
     const dirLightBack1 = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLightBack1.position.set(2,1,1);
+    dirLightBack1.position.set(2,1,-1);
 
     // Create Second Back-Side Directional Light
     const dirLightBack2 = new THREE.DirectionalLight(0xffffff, 0.7);
-    dirLightBack2.position.set(-2,1,1);
+    dirLightBack2.position.set(-2,1,-1);
 
     // Create Ambient Light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Soft white light

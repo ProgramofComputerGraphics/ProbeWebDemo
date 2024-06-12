@@ -16,7 +16,7 @@ const farPlaneSurfaceMaterial = new THREE.MeshBasicMaterial({color : 0xe04040,
                                                             side : THREE.DoubleSide});
 
 const toDonConvention = new THREE.Matrix4();
-toDonConvention.set( 1,0,0,0,
+toDonConvention.set( -1,0,0,0,
                       0,1,0,0,
                       0,0,0.5,0.5,
                       0,0,0,1 );
@@ -968,48 +968,48 @@ export class Frustum {
        
         // Right-side plane (backwards from expected due to OpenGL convention)
         const leftPlane = new THREE.Plane();
-        leftPlane.setFromCoplanarPoints(frustumPoints[0],
-                                        frustumPoints[3],
+        leftPlane.setFromCoplanarPoints(frustumPoints[3],
+                                        frustumPoints[0],
                                         frustumPoints[4]);
         leftPlane.constant += epsilon;
         clippingPlanes.push(leftPlane);
 
         // Left-side plane (backwards from expected due to OpenGL convention)
         const rightPlane = new THREE.Plane();
-        rightPlane.setFromCoplanarPoints(frustumPoints[2],
-                                        frustumPoints[1],
+        rightPlane.setFromCoplanarPoints(frustumPoints[1],
+                                        frustumPoints[2],
                                         frustumPoints[5]);
         rightPlane.constant += epsilon;
         clippingPlanes.push(rightPlane);
 
         // Bottom-side plane
         const bottomPlane = new THREE.Plane();
-        bottomPlane.setFromCoplanarPoints(frustumPoints[1],
-                                        frustumPoints[0],
+        bottomPlane.setFromCoplanarPoints(frustumPoints[0],
+                                        frustumPoints[1],
                                         frustumPoints[4]);
         bottomPlane.constant += epsilon;
         clippingPlanes.push(bottomPlane);
 
         // Top-side plane
         const topPlane = new THREE.Plane();
-        topPlane.setFromCoplanarPoints(frustumPoints[3],
-                                        frustumPoints[2],
+        topPlane.setFromCoplanarPoints(frustumPoints[2],
+                                        frustumPoints[3],
                                         frustumPoints[6]);
         topPlane.constant += epsilon;
         clippingPlanes.push(topPlane);
 
         // Near plane
         const nearPlane = new THREE.Plane();
-        nearPlane.setFromCoplanarPoints(frustumPoints[0],
-                                        frustumPoints[1],
+        nearPlane.setFromCoplanarPoints(frustumPoints[1],
+                                        frustumPoints[0],
                                         frustumPoints[2]);
         nearPlane.constant += epsilon;
         clippingPlanes.push(nearPlane);
 
         // Far plane
         const farPlane = new THREE.Plane();
-        farPlane.setFromCoplanarPoints(frustumPoints[5],
-                                        frustumPoints[4],
+        farPlane.setFromCoplanarPoints(frustumPoints[4],
+                                        frustumPoints[5],
                                         frustumPoints[6]);
         farPlane.constant += epsilon;
         clippingPlanes.push(farPlane);
