@@ -27,7 +27,7 @@ export class ViewManager {
                 name: "realView",
                 containerID: "realViewContainer",
                 // background: new THREE.Color().setRGB( 0.5, 0.5, 0.7, THREE.SRGBColorSpace ),
-                eye: [ -12, 10, 0 ],
+                eye: [ 12, 10, 0 ],
                 up: [ 0, 1, 0 ],
                 fov: 30,
                 controllable: true,
@@ -40,7 +40,7 @@ export class ViewManager {
                 name: "orthoView",
                 containerID: "orthoViewContainer",
                 // background: new THREE.Color().setRGB( 0.6, 0.7, 0.7, THREE.SRGBColorSpace ),
-                eye: [ -10, 0, 5 ],
+                eye: [ 10, 0, -5 ],
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
                 vDist: 10,
@@ -70,7 +70,7 @@ export class ViewManager {
                 name: "imageView",
                 containerID: "imageViewContainer",
                 // background: new THREE.Color().setRGB( 0.7, 0.5, 0.5, THREE.SRGBColorSpace ),
-                eye: [-24 , 6, -4 ],
+                eye: [-12 , 3, -2 ],
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
                 vDist: 2.5,
@@ -152,8 +152,10 @@ export class ViewManager {
             camera.lookAt(new THREE.Vector3(0,0,0.5));
         }
         else {
-            camera.lookAt(new THREE.Vector3(0,0,5))
+            camera.lookAt(new THREE.Vector3(0,0,-5))
         };
+
+        console.log(camera.position);
 
         camera.updateProjectionMatrix();
         view.camera = camera;
@@ -188,7 +190,7 @@ export class ViewManager {
             cameraControls.target = new THREE.Vector3(0,0,0.5);
         }
         else {
-            cameraControls.target = new THREE.Vector3(0,0,5);
+            cameraControls.target = new THREE.Vector3(0,0,-5);
         };
         
         if(!view.rotatable) {
@@ -337,18 +339,18 @@ export class ViewManager {
         }
 
         if(view.orthoMode == "elevation") {
-            view.camera.position.set(0, frustumFarPlane, frustumFarPlane/2);
-            view.camera.up.set(0,0,-1);
+            view.camera.position.set(0, frustumFarPlane, -frustumFarPlane/2);
+            view.camera.up.set(0,0,1);
             view.orthoMode = "plan";
         }
         else {
-            view.camera.position.set(-frustumFarPlane, 0, frustumFarPlane/2);
+            view.camera.position.set(frustumFarPlane, 0, -frustumFarPlane/2);
             view.camera.up.set(0,1,0);
             view.orthoMode = "elevation";
         }
             
-        view.camera.lookAt(0,0,frustumFarPlane/2);
-        view.cameraControls.target.set(0,0,frustumFarPlane/2);
+        view.camera.lookAt(0,0,-frustumFarPlane/2);
+        view.cameraControls.target.set(0,0,-frustumFarPlane/2);
         
         view.camera.updateProjectionMatrix();
     }

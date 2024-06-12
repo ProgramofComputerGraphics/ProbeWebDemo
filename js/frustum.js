@@ -15,14 +15,8 @@ const farPlaneSurfaceMaterial = new THREE.MeshBasicMaterial({color : 0xe04040,
                                                             opacity: 0.2,
                                                             side : THREE.DoubleSide});
 
-const flipX = new THREE.Matrix4();
-flipX.set( -1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1 );
-
 const toDonConvention = new THREE.Matrix4();
-toDonConvention.set( -1,0,0,0,
+toDonConvention.set( 1,0,0,0,
                       0,1,0,0,
                       0,0,0.5,0.5,
                       0,0,0,1 );
@@ -241,37 +235,37 @@ export class Frustum {
         // left corner of the frustum.
         frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
                                              -frustumNearXandY,
-                                             this.#near));
+                                             -this.#near));
         frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                              -frustumFarXandY,
-                                             this.#far));
+                                             -this.#far));
     
         // These vertices define the truncated pyramid line for the bottom-
         // right corner of the frustum
         frustumPoints.push(new THREE.Vector3(frustumNearXandY,
                                              -frustumNearXandY,
-                                             this.#near));
+                                             -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                              -frustumFarXandY,
-                                             this.#far));
+                                             -this.#far));
         
         // These vertices define the truncated pyramid line for the top-
         // left corner of the frustum.
         frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
                                              frustumNearXandY,
-                                             this.#near));
+                                             -this.#near));
         frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                              frustumFarXandY,
-                                             this.#far));                                             
+                                             -this.#far));                                             
     
         // These vertices define the truncated pyramid line for the top-
         // right corner of the frustum.
         frustumPoints.push(new THREE.Vector3(frustumNearXandY,
                                              frustumNearXandY,
-                                             this.#near));
+                                             -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                              frustumFarXandY,
-                                             this.#far)); 
+                                             -this.#far)); 
     
         // Create frustum buffer geometry from vertex pairs
         const frustumGeo = new THREE.BufferGeometry().setFromPoints(frustumPoints);
@@ -303,28 +297,28 @@ export class Frustum {
         frustumTipPoints.push(new THREE.Vector3(0,0,0));
         frustumTipPoints.push(new THREE.Vector3(-frustumNearXandY,
                                                 -frustumNearXandY,
-                                                this.#near));
+                                                -this.#near));
     
         // These vertices define the pyramid tip line for the bottom-
         // right corner of the frustum
         frustumTipPoints.push(new THREE.Vector3(0,0,0));
         frustumTipPoints.push(new THREE.Vector3(frustumNearXandY,
                                                 -frustumNearXandY,
-                                                this.#near));
+                                                -this.#near));
         
         // These vertices define the pyramid tip line for the top-
         // left corner of the frustum.
         frustumTipPoints.push(new THREE.Vector3(0,0,0));
         frustumTipPoints.push(new THREE.Vector3(-frustumNearXandY,
                                                 frustumNearXandY,
-                                                this.#near));                                             
+                                                -this.#near));                                             
     
         // These vertices define the pyramid tip line for the top-
         // right corner of the frustum.
         frustumTipPoints.push(new THREE.Vector3(0,0,0));
         frustumTipPoints.push(new THREE.Vector3(frustumNearXandY,
                                                 frustumNearXandY,
-                                                this.#near));
+                                                -this.#near));
     
         // Create frustum buffer geometry from vertex pairs
         const frustumGeo = new THREE.BufferGeometry().setFromPoints(frustumTipPoints);
@@ -360,7 +354,7 @@ export class Frustum {
         this.#perspectiveNearPlane.clear();
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneLines);
         this.#perspectiveNearPlane.add(this.#perspectiveNearPlaneSurface);
-        this.#perspectiveNearPlane.position.set(0,0,this.#near);
+        this.#perspectiveNearPlane.position.set(0,0,-this.#near);
         this.#perspectiveNearPlane.updateMatrixWorld();
     }
 
@@ -387,7 +381,7 @@ export class Frustum {
         this.#perspectiveFarPlane.clear();
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneLines);
         this.#perspectiveFarPlane.add(this.#perspectiveFarPlaneSurface);
-        this.#perspectiveFarPlane.position.set(0,0,this.#far);
+        this.#perspectiveFarPlane.position.set(0,0,-this.#far);
         this.#perspectiveFarPlane.updateMatrixWorld();
     }
 
@@ -402,33 +396,33 @@ export class Frustum {
         // These vertices define the bottom-left corner of the frustum.
         frustumPoints.push(new THREE.Vector3(-orthoHalfDist,
                                             -orthoHalfDist,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(-orthoHalfDist,
                                             -orthoHalfDist,
-                                            this.#far));
+                                            -this.#far));
 
         // These vertices define the bottom-right corner of the frustum.
         frustumPoints.push(new THREE.Vector3(orthoHalfDist,
                                             -orthoHalfDist,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(orthoHalfDist,
                                             -orthoHalfDist,
-                                            this.#far));
+                                            -this.#far));
 
         // These vertices define the top-left corner of the frustum.
         frustumPoints.push(new THREE.Vector3(-orthoHalfDist,
                                             orthoHalfDist,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(-orthoHalfDist,
                                             orthoHalfDist,
-                                            this.#far));
+                                            -this.#far));
         // These vertices define the top-right corner of the frustum.
         frustumPoints.push(new THREE.Vector3(orthoHalfDist,
                                             orthoHalfDist,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(orthoHalfDist,
                                             orthoHalfDist,
-                                            this.#far));
+                                            -this.#far));
 
         // Create frustum buffer geometry from vertex pairs
         const frustumGeo = new THREE.BufferGeometry().setFromPoints(frustumPoints);
@@ -459,7 +453,7 @@ export class Frustum {
         this.#orthoNearPlane.clear();
         this.#orthoNearPlane.add(this.#orthoNearPlaneLines);
         this.#orthoNearPlane.add(this.#orthoNearPlaneSurface);
-        this.#orthoNearPlane.position.set(0,0,this.#near);
+        this.#orthoNearPlane.position.set(0,0,-this.#near);
         this.#orthoNearPlane.updateMatrixWorld();
     }
 
@@ -480,7 +474,7 @@ export class Frustum {
         this.#orthoFarPlane.clear();
         this.#orthoFarPlane.add(this.#orthoFarPlaneLines);
         this.#orthoFarPlane.add(this.#orthoFarPlaneSurface);
-        this.#orthoFarPlane.position.set(0,0,this.#far);
+        this.#orthoFarPlane.position.set(0,0,-this.#far);
         this.#orthoFarPlane.updateMatrixWorld();
     }
 
@@ -490,7 +484,7 @@ export class Frustum {
                                                                 this.#far);
 
         this.#perspectiveCamera.position.set(0,0,0);
-        this.#perspectiveCamera.lookAt(0,0,1); 
+        this.#perspectiveCamera.lookAt(0,0,-1); 
         this.#perspectiveCamera.updateMatrixWorld(); 
         this.#perspectiveCamera.updateProjectionMatrix();
     }
@@ -505,7 +499,7 @@ export class Frustum {
                                                         this.#near, this.#far);
 
         this.#orthoCamera.position.set(0,0,0);
-        this.#orthoCamera.lookAt(0,0,1); 
+        this.#orthoCamera.lookAt(0,0,-1); 
         this.#orthoCamera.updateMatrixWorld(); 
         this.#orthoCamera.updateProjectionMatrix();
     }
@@ -663,6 +657,7 @@ export class Frustum {
             }
             else {
                 this.#distortionMatrix.identity();
+                this.#distortionMatrix.scale(new THREE.Vector4(1,1,-1,1));
             }
             return;
         }
@@ -674,6 +669,7 @@ export class Frustum {
         fullDistortMatrix.premultiply(toDonConvention);
 
         const noDistortMatrix = new THREE.Matrix4();
+        noDistortMatrix.scale(new THREE.Vector4(1,1,-1,1));
 
         let t = (now - this.#transitionStart) / (this.#transitionDuration);
         
@@ -884,29 +880,29 @@ export class Frustum {
 
         frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
                                             -frustumNearXandY,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumNearXandY,
                                             -frustumNearXandY,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumNearXandY,
                                             frustumNearXandY,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(-frustumNearXandY,
                                             frustumNearXandY,
-                                            this.#near));
+                                            -this.#near));
 
         frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                             -frustumFarXandY,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                             -frustumFarXandY,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(frustumFarXandY,
                                             frustumFarXandY,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(-frustumFarXandY,
                                             frustumFarXandY,
-                                            this.#far));
+                                            -this.#far));
 
         for(let i = 0; i < frustumPoints.length; ++i) {
             this.applyFrustumDistortionToVector(frustumPoints[i]);
@@ -922,29 +918,29 @@ export class Frustum {
 
         frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
                                             -frustumHalfLength,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumHalfLength,
                                             -frustumHalfLength,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(frustumHalfLength,
                                             frustumHalfLength,
-                                            this.#near));
+                                            -this.#near));
         frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
                                             frustumHalfLength,
-                                            this.#near));
+                                            -this.#near));
 
         frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
                                             -frustumHalfLength,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(frustumHalfLength,
                                             -frustumHalfLength,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(frustumHalfLength,
                                             frustumHalfLength,
-                                            this.#far));
+                                            -this.#far));
         frustumPoints.push(new THREE.Vector3(-frustumHalfLength,
                                             frustumHalfLength,
-                                            this.#far));
+                                            -this.#far));
 
         for(let i = 0; i < frustumPoints.length; ++i) {
             this.applyFrustumDistortionToVector(frustumPoints[i]);
@@ -969,21 +965,22 @@ export class Frustum {
 
         const clippingPlanes = [];
     
-        // Left-side plane (backwards from expected due to OpenGL convention)
-        const leftPlane = new THREE.Plane();
-        leftPlane.setFromCoplanarPoints(frustumPoints[2],
-                                        frustumPoints[1],
-                                        frustumPoints[5]);
-        leftPlane.constant += epsilon;
-        //clippingPlanes.push(leftPlane);
-    
+       
         // Right-side plane (backwards from expected due to OpenGL convention)
-        const rightPlane = new THREE.Plane();
-        rightPlane.setFromCoplanarPoints(frustumPoints[0],
+        const leftPlane = new THREE.Plane();
+        leftPlane.setFromCoplanarPoints(frustumPoints[0],
                                         frustumPoints[3],
                                         frustumPoints[4]);
+        leftPlane.constant += epsilon;
+        //clippingPlanes.push(leftPlane);
+
+        // Left-side plane (backwards from expected due to OpenGL convention)
+        const rightPlane = new THREE.Plane();
+        rightPlane.setFromCoplanarPoints(frustumPoints[2],
+                                        frustumPoints[1],
+                                        frustumPoints[5]);
         rightPlane.constant += epsilon;
-        clippingPlanes.push(rightPlane);
+        //clippingPlanes.push(rightPlane);
 
         // Bottom-side plane
         const bottomPlane = new THREE.Plane();

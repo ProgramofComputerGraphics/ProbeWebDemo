@@ -22,7 +22,9 @@ export class AxesObject {
 
         if(flipAxes == null){
             flipAxes = [];
-            flipAxes.push(true); // Default to negative X for Don Convention
+            flipAxes.push(false);
+            flipAxes.push(false); 
+            flipAxes.push(true); // Default to negative Z for Don Convention
         }
         while(flipAxes.length < 3){
             flipAxes.push(false);

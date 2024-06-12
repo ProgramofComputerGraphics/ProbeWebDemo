@@ -112,7 +112,9 @@ export class ProbeScene {
         // Initialize scene
         this.#imageSpaceScene = new THREE.Scene();
 
-        this.#imageSpaceSceneAxes = new AxesObject(0.25);
+        this.#imageSpaceSceneAxes = new AxesObject(0.25, 
+                                                    null, 
+                                                    [true, false, false]);
         this.#imageSpaceSceneAxes.addToScene(this.#imageSpaceScene);
 
         initSceneLights(this.#imageSpaceScene);
@@ -133,7 +135,7 @@ export class ProbeScene {
         this.#changeSceneObject(new THREE.Mesh(defaultGeo, this.#objMaterial));
     
         // Set default object tranformation for default cube
-        this.#objectDefaultPosition.set(0,0,2.5);
+        this.#objectDefaultPosition.set(0,0,-2.5);
         this.#objectDefaultRotation.set(0,0,0,"XYZ");
         this.#objectDefaultScale.set(1,1,1);
 

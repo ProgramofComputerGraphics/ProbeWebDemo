@@ -6,7 +6,7 @@ varying vec3 vWorldNormal;
 void main() {
     #include <clipping_planes_fragment>
     
-    gl_FragColor = vec4(0.5f*vec3(1.0f - vWorldNormal.x, 
+    gl_FragColor = vec4(0.5f*vec3(1.0f + vWorldNormal.x, 
                                   1.0f + vWorldNormal.y, 
-                                  1.0f + vWorldNormal.z), 1.0f);
+                                  1.0f - vWorldNormal.z), 1.0f);
 }
