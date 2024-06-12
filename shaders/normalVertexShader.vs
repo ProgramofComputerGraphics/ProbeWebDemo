@@ -11,7 +11,7 @@ void main() {
 
     vWorldPosition = (modelMatrix * vec4(position, 1.0f)).xyz;
 
-    vWorldNormal = (modelMatrix * vec4(normal, 0.0f)).xyz;
+    vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0f)).xyz);
     
     vCameraPos = cameraPosition;
     

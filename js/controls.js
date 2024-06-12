@@ -1,6 +1,33 @@
 import * as THREE from "three";
 
 
+// Object Import/Export Functions
+function initLoadObjectFileEntry(probeScene) {
+    const loadObjectFileEntry = document.getElementById("loadObjectFileEntry");
+
+    loadObjectFileEntry.addEventListener('change', async () => {
+        let fileText;
+
+        // Get the file from the input element
+        const file = loadObjectFileEntry.files[0];
+        if (file) {
+            // Create a FileReader to read the file
+            const reader = new FileReader();
+
+            // Set up a Promise to handle the file read process
+            fileText = await new Promise((resolve, reject) => {
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = (error) => reject(error);
+                reader.readAsText(file);
+            });
+
+            // Call the probeScene's loadObjectFromText method with the file content
+            probeScene.loadObjectFromText(fileText);
+        }
+    });
+}
+
+
 // Frustum Control Functions
 
 function initProjectionDropdown(probeScene, viewManager, cameraViewIndex) {
@@ -149,25 +176,25 @@ function initTransformWidgetButtons(probeScene, viewManager) {
     const scaleButton = document.getElementById("scaleButton");
 
     let setGumballModeToTranslate = (event) => {
-        translateButton.className = "submenu-button-clicked";
-        rotateButton.className = "submenu-button";
-        scaleButton.className = "submenu-button";
+        translateButton.className = "transform-button-clicked";
+        rotateButton.className = "transform-button";
+        scaleButton.className = "transform-button";
 
         probeScene.setGumballMode("translate");
     }
 
     let setGumballModeToRotate = (event) => {
-        translateButton.className = "submenu-button";
-        rotateButton.className = "submenu-button-clicked";
-        scaleButton.className = "submenu-button";
+        translateButton.className = "transform-button";
+        rotateButton.className = "transform-button-clicked";
+        scaleButton.className = "transform-button";
 
         probeScene.setGumballMode("rotate");
     }
 
     let setGumballModeToScale = (event) => {
-        translateButton.className = "submenu-button";
-        rotateButton.className = "submenu-button";
-        scaleButton.className = "submenu-button-clicked";
+        translateButton.className = "transform-button";
+        rotateButton.className = "transform-button";
+        scaleButton.className = "transform-button-clicked";
 
         probeScene.setGumballMode("scale");
     }
@@ -246,6 +273,9 @@ function initNearFarPlaneOpacitySlider(probeScene) {
 
 export function initControls(probeScene, viewManager, cameraViewIndex) {
     
+    // Object Import/Export Controls
+    initLoadObjectFileEntry(probeScene);
+
     // Frustum Controls
     initProjectionDropdown(probeScene, viewManager, cameraViewIndex);
     initFOVSlider(probeScene, viewManager, cameraViewIndex);
@@ -284,23 +314,24 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
         }
     }
 
-    window.onOrthoSwapRealImageButtonPressed = function(viewName, buttonID) {
-        const view = viewManager.getViewByName(viewName);
+    // Currently Unused
+    // window.onOrthoSwapRealImageButtonPressed = function(viewName, buttonID) {
+    //     const view = viewManager.getViewByName(viewName);
     
-        const viewData = viewManager.getViewData()[view];
+    //     const viewData = viewManager.getViewData()[view];
     
-        viewData.imagespace = !viewData.imagespace;
-        const button = document.getElementById(buttonID);
+    //     viewData.imagespace = !viewData.imagespace;
+    //     const button = document.getElementById(buttonID);
 
-        if(viewData.imagespace) {
-            button.textContent = "Imagespace View";
-            button.title = "Click to Sync with Real View"
-        }
-        else {
-            button.textContent = "Real View";
-            button.title = "Click to Sync with Imagespace View";
-        }
-    }
+    //     if(viewData.imagespace) {
+    //         button.textContent = "Imagespace View";
+    //         button.title = "Click to Sync with Real View"
+    //     }
+    //     else {
+    //         button.textContent = "Real View";
+    //         button.title = "Click to Sync with Imagespace View";
+    //     }
+    // }
     
     window.onOrthoSwapElevationPlanButtonPressed = function(viewName, buttonID) {
         const view = viewManager.getViewByName(viewName);

@@ -700,12 +700,13 @@ export class Frustum {
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
     applyFrustumDistortionToObject(obj, debug) {
         const positionAttribute = obj.geometry.getAttribute("position");
+        const vertCount = positionAttribute.count;
         const vertex = new THREE.Vector3();
 
         const normalAttribute = obj.geometry.getAttribute("normal");
         const normal = new THREE.Vector3();
 
-        for (let i = 0; i < positionAttribute.count; i++) {
+        for (let i = 0; i < vertCount; i++) {
             vertex.fromBufferAttribute(positionAttribute, i);
 
             vertex.applyMatrix4(obj.matrixWorld);
@@ -715,15 +716,16 @@ export class Frustum {
             positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); 
         }
 
+        const indices = obj.geometry.index;
+
         if(normalAttribute){
             const vert1 = new THREE.Vector3();
             const vert2 = new THREE.Vector3();
             const vert3 = new THREE.Vector3();
 
-            const indices = obj.geometry.index; 
-
             let idx1, idx2, idx3;
-            for(let i = 0; i < indices.count; i+=3){
+            const loopIters = indices == null ? vertCount : indices.count;
+            for(let i = 0; i < loopIters; i+=3){
                 if(indices == null){
                     idx1 = i;
                     idx2 = i+1;
@@ -968,21 +970,20 @@ export class Frustum {
         const clippingPlanes = [];
     
         // Left-side plane (backwards from expected due to OpenGL convention)
-        const rightPlane = new THREE.Plane();
-        rightPlane.setFromCoplanarPoints(frustumPoints[2],
+        const leftPlane = new THREE.Plane();
+        leftPlane.setFromCoplanarPoints(frustumPoints[2],
                                         frustumPoints[1],
                                         frustumPoints[5]);
-        rightPlane.constant += epsilon;
-        clippingPlanes.push(rightPlane);
+        leftPlane.constant += epsilon;
+        //clippingPlanes.push(leftPlane);
     
         // Right-side plane (backwards from expected due to OpenGL convention)
-        const leftPlane = new THREE.Plane();
-        leftPlane.setFromCoplanarPoints(frustumPoints[0],
+        const rightPlane = new THREE.Plane();
+        rightPlane.setFromCoplanarPoints(frustumPoints[0],
                                         frustumPoints[3],
                                         frustumPoints[4]);
-        leftPlane.constant += epsilon;
-        
-        clippingPlanes.push(leftPlane);
+        rightPlane.constant += epsilon;
+        clippingPlanes.push(rightPlane);
 
         // Bottom-side plane
         const bottomPlane = new THREE.Plane();
@@ -990,7 +991,7 @@ export class Frustum {
                                         frustumPoints[0],
                                         frustumPoints[4]);
         bottomPlane.constant += epsilon;
-        clippingPlanes.push(bottomPlane);
+        //clippingPlanes.push(bottomPlane);
 
         // Top-side plane
         const topPlane = new THREE.Plane();
@@ -998,7 +999,7 @@ export class Frustum {
                                         frustumPoints[2],
                                         frustumPoints[6]);
         topPlane.constant += epsilon;
-        clippingPlanes.push(topPlane);
+        //clippingPlanes.push(topPlane);
 
         // Near plane
         const nearPlane = new THREE.Plane();
@@ -1006,7 +1007,7 @@ export class Frustum {
                                         frustumPoints[1],
                                         frustumPoints[2]);
         nearPlane.constant += epsilon;
-        clippingPlanes.push(nearPlane);
+        //clippingPlanes.push(nearPlane);
 
         // Far plane
         const farPlane = new THREE.Plane();
@@ -1014,7 +1015,7 @@ export class Frustum {
                                         frustumPoints[4],
                                         frustumPoints[6]);
         farPlane.constant += epsilon;
-        clippingPlanes.push(farPlane);
+        //clippingPlanes.push(farPlane);
 
         return clippingPlanes;
     }

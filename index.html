@@ -17,6 +17,21 @@
 				<hr>
 				<div class="menu" id="controlsMenu">
 					
+					<!-- Object Import/Export Controls -->
+					<div class="submenu-label" id="objectLoadingLabel">
+						Object Import/Export
+					</div>
+					<div class="submenu" id="objectLoadingControls">
+						<div class="submenu-item">
+							<label for="loadObjectFileEntry"> Load Object: </label>
+							<input class="submenu-button" type="file" id="loadObjectFileEntry"/>
+						</div>
+						<div class="submenu-item">
+							<label for="saveObjectButton"> Export Distorted Object: </label>
+							<button class="submenu-button" id="saveObjectButton"> Export </button>
+						</div>
+					</div>
+
 					<!-- Frustum Controls -->
 					<div class="submenu-label" id="frustumControlsLabel">
 						Frustum
@@ -60,13 +75,14 @@
 					</div>
 					<div class="submenu" id="transformationControls">
 						<div class="submenu-item">
-							<button class="submenu-button" id="transformResetButton"> Reset (Q) </button>
-							<br>
-							<button class="submenu-button-clicked" id="translateButton"> Translate (W) </button>
-							<br>
-							<button class="submenu-button" id="rotateButton"> Rotate (E) </button>
-							<br>
-							<button class="submenu-button" id="scaleButton"> Scale (R) </button>
+							<div class="submenu-button-row">
+								<button class="transform-button" id="transformResetButton"> Reset (Q) </button>
+								<button class="transform-button-clicked" id="translateButton"> Translate (W) </button>
+							</div>
+							<div class="submenu-button-row">
+								<button class="transform-button" id="rotateButton"> Rotate (E) </button>
+								<button class="transform-button" id="scaleButton"> Scale (R) </button>
+							</div>
 						</div>
 					</div>
 
@@ -136,7 +152,7 @@
 						<div class="view-header">
 							<label class="header-label"> Orthographic View </label>
 							<div style="height:100%">
-								<button class="header_button" id="orthoSwapRealImageButton" onclick="onOrthoSwapRealImageButtonPressed('orthoView', 'orthoSwapRealImageButton')" style="height:100%" title="Click to Sync with Imagespace View"> Real View </button>
+								<!-- <button class="header_button" id="orthoSwapRealImageButton" onclick="onOrthoSwapRealImageButtonPressed('orthoView', 'orthoSwapRealImageButton')" style="height:100%" title="Click to Sync with Imagespace View"> Real View </button> -->
 								<button class="header_button" id="orthoSwapElevationPlanButton" onclick="onOrthoSwapElevationPlanButtonPressed('orthoView', 'orthoSwapElevationPlanButton')" style="height:100%" title="Click to Swap to Plan"> Elevation </button>
 								<button class="header_button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')" style="height:100%"> Fullscreen </button>
 							</div>

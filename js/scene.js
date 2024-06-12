@@ -145,46 +145,35 @@ export class ProbeScene {
         this.#changeSceneObject(loadedObject);
     
         // Change materials on loaded object to the scene material
+        const mat = this.#objMaterial;
         this.#object.children.forEach(function(mesh) {
             try {
-                mesh.material = this.material;
+                mesh.material = mat;
             }
             catch(error) {
                 console.log("Non-mesh element loaded from OBJ; scene material cannot be applied!");
             }
         });
+
+        console.log(this.#object);
+        console.log(this.#object.children[0].material);
     }
 
     getCurrentObject() {
         return object;
     }
 
-    loadObjectAtPath(objectPath)
+    loadObjectFromText(objectText)
     {
         // Immediately fail for malformed paths
-        if(objectPath != null && objectPath != "")
+        if(objectText == null || objectText == "")
         {  
-            console.log("Object Loading Failed: Null or Empty Path Provided!");
+            console.log("Object Loading Failed: Null or Empty Text Provided!");
             return;
         }
 
-        loader.load(
-            objectPath,
-            this.#addLoadedObjectToScene,
-            // called when loading is in progresses
-            function(xhr) {
-
-                console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-
-            },
-            // called when loading has errors
-            function(error) {
-
-                console.log("Object Loading Failed:", error);
-
-                this.#makeDefaultCube();
-            }
-        );  
+        const object = loader.parse(objectText);  
+        this.#addLoadedObjectToScene(object);
     }
 
     getProjectionMode() {
@@ -260,9 +249,10 @@ export class ProbeScene {
             this.#object.material = this.#objMaterial;
         }
 
+        const mat = this.#objMaterial;
         this.#object.children.forEach(function(mesh) {
             try {
-                mesh.material = this.material;
+                mesh.material = mat;
             }
             catch(error) {
                 console.log("Non-mesh element encountered during material update; " +
@@ -450,6 +440,18 @@ export class ProbeScene {
         }
     }
 
+    setGumballSnap(snap) {
+        if(this.#gumball == null)
+            return;
+
+        if(snap) {
+            this.#gumball.setRotationSnap(Math.PI/6);
+        }
+        else {
+            this.#gumball.setRotationSnap(null);
+        }
+    }
+
     clickObject(object, view, viewIndex, cameraViewCamera) {
         // Destroy the gumball and return if the object cannot be clicked,
         // or if the view does not have the gumball enabled.
@@ -535,6 +537,29 @@ export class ProbeScene {
         return distortedObj;
     }
 
+    #removeDistortedObject(obj) {
+        if(obj instanceof THREE.Mesh || 
+            obj instanceof THREE.Line)
+        {
+            obj.geometry.dispose();
+        }
+        else {
+            for(let i = 0; i < obj.children.length; ++i) {
+                const child = obj.children[i];
+                if(child instanceof THREE.Mesh || 
+                    child instanceof THREE.Line)
+                {
+                    child.geometry.dispose();
+                    obj.remove(child);
+                }
+                else {
+                    console.log("Non-mesh/line element detected in object;" + 
+                                "cannot deallocate GPU resources!");
+                }
+            }
+        }
+    }
+
     renderScene(viewIndex, renderer, camera, imagespace, showFrustum, linesOnly, showAxes)
     {
         if(this.#gumballView == viewIndex)
@@ -565,7 +590,7 @@ export class ProbeScene {
             }
 
             renderer.clippingPlanes = this.#frustum.generateFrustumClippingPlanes();
-    
+
             renderer.render(this.#imageSpaceScene, camera);
     
             this.#imageSpaceScene.remove(distortedObj);
@@ -575,6 +600,8 @@ export class ProbeScene {
             }
 
             renderer.clippingPlanes = [];
+
+            this.#removeDistortedObject(distortedObj);
         }
 
         if(this.#gumballView == viewIndex)

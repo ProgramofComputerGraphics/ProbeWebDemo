@@ -271,6 +271,12 @@ export class InputManager {
     keyDown(keyEvent) {
         const key = keyEvent.key;
 
+        switch(key){
+            case "Shift":
+                this.#probeScene.setGumballSnap(true);
+                break;
+        }
+
         // Update state variable
         this.#keyDownEvents[key] = keyEvent;
     }
@@ -288,21 +294,24 @@ export class InputManager {
                 break;
             case "w":
                 this.#probeScene.setGumballMode("translate");
-                translateButton.className = "submenu-button-clicked";
-                rotateButton.className = "submenu-button";
-                scaleButton.className = "submenu-button";
+                translateButton.className = "transform-button-clicked";
+                rotateButton.className = "transform-button";
+                scaleButton.className = "transform-button";
                 break;
             case "e":
                 this.#probeScene.setGumballMode("rotate");
-                translateButton.className = "submenu-button";
-                rotateButton.className = "submenu-button-clicked";
-                scaleButton.className = "submenu-button";
+                translateButton.className = "transform-button";
+                rotateButton.className = "transform-button-clicked";
+                scaleButton.className = "transform-button";
                 break;
             case "r":
                 this.#probeScene.setGumballMode("scale");
-                translateButton.className = "submenu-button";
-                rotateButton.className = "submenu-button";
-                scaleButton.className = "submenu-button-clicked";
+                translateButton.className = "transform-button";
+                rotateButton.className = "transform-button";
+                scaleButton.className = "transform-button-clicked";
+                break;
+            case "Shift":
+                this.#probeScene.setGumballSnap(false);
                 break;
             case " ":
                 setTestBoolean(true);
