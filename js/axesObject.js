@@ -1,5 +1,6 @@
 import * as THREE from "three"
 
+import { defaults } from "./defaults.js";
 import { loadLocalFile } from "./file.js";
 
 const unitY = new THREE.Vector3(0,1,0);
@@ -53,8 +54,8 @@ export class AxesObject {
         this.#axesObjectGroup.add(yAxis);
         this.#axesObjectGroup.add(zAxis);
 
-        // Start invisible (TODO: Automatically detect default value)
-        this.#axesObjectGroup.visible = false;
+        // Start with default visibility
+        this.#axesObjectGroup.visible = defaults.startShowAxes;
     }
 
     #createAxisArrow(direction, length, color) {

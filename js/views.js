@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+import { defaults } from './defaults.js';
 import { pointInRectangle } from './utils.js';
 
 const orthoPadding = 0.25;
@@ -26,7 +27,7 @@ export class ViewManager {
                 name: "realView",
                 containerID: "realViewContainer",
                 // background: new THREE.Color().setRGB( 0.5, 0.5, 0.7, THREE.SRGBColorSpace ),
-                eye: [ 12, 10, 0 ],
+                eye: [ 9, 7, 0 ],
                 up: [ 0, 1, 0 ],
                 fov: 30,
                 controllable: true,
@@ -40,10 +41,10 @@ export class ViewManager {
                 name: "orthoView",
                 containerID: "orthoViewContainer",
                 // background: new THREE.Color().setRGB( 0.6, 0.7, 0.7, THREE.SRGBColorSpace ),
-                eye: [ 10, 0, -5 ],
+                eye: [100, 0, -defaults.startFar / 2], 
                 up: [ 0, 1, 0 ],
                 fov: "ortho",
-                vDist: 10,
+                vDist: 5,
                 orthoMode: "elevation",
                 controllable: true,
                 rotatable: false,
@@ -58,7 +59,7 @@ export class ViewManager {
                 // background: new THREE.Color().setRGB( 0.5, 0.7, 0.7, THREE.SRGBColorSpace ),
                 eye: [ 0, 0, 0 ],
                 up: [ 0, 1, 0 ],
-                fov: 45,
+                fov: defaults.startFOV,
                 controllable: false,
                 imagespace: false,
                 frustumLinesOnly: true,
@@ -104,6 +105,8 @@ export class ViewManager {
             this.#initCameraControls(view);
         }
 
+        console.log(this.#views);
+
         // Initialize the scene for camera outlines
         this.#cameraOutlineScene = new THREE.Scene();
 
@@ -119,6 +122,8 @@ export class ViewManager {
     #initViewCamera(view) {
         var camera;
 
+        const midFrustum = (defaults.startNear + defaults.startFar) / 2;
+
         // Define the camera based on the specified parameters (fov is set to "ortho"
         // for orthographic cameras). 
         if(view.fov == "ortho"){
@@ -129,22 +134,25 @@ export class ViewManager {
             camera = new THREE.OrthographicCamera(-hDist, hDist, 
                                                     vDistAdjusted/2, 
                                                     -vDistAdjusted/2);
+
             camera.up.fromArray(view.up);
         }
         else{
             // Note: The aspect ratio given here is overwritten by a call to 
             // "updateViewCameras()" on every render frame, so it need not be
             // accurate here.
-            camera = new THREE.PerspectiveCamera(view.fov, window.innerWidth / window.innerHeight, 1, 1000);
+            camera = new THREE.PerspectiveCamera(view.fov, 
+                                                window.innerWidth / window.innerHeight, 
+                                                1, 1000);
             
-            // TODO - Automatically pull default values instead of hard-coding them
             if(view.name=="cameraView"){
-                camera.near = 1;
-                camera.far = 10;
+                camera.near = defaults.startNear;
+                camera.far = defaults.startFar;
             }
-            
+
             camera.up.fromArray(view.up);
         }
+
         camera.position.fromArray(view.eye);
 
         // Define the target for the camera
@@ -153,7 +161,8 @@ export class ViewManager {
             camera.lookAt(new THREE.Vector3(0,0,-0.5));
         }
         else {
-            camera.lookAt(new THREE.Vector3(0,0,-5))
+            const midFrustum = defaults.startFar / 2;
+            camera.lookAt(new THREE.Vector3(0,0,-midFrustum))
         };
 
         camera.updateProjectionMatrix();
@@ -189,7 +198,8 @@ export class ViewManager {
             cameraControls.target = new THREE.Vector3(0,0,-0.5);
         }
         else {
-            cameraControls.target = new THREE.Vector3(0,0,-5);
+            const midFrustum = defaults.startFar / 2;
+            cameraControls.target = new THREE.Vector3(0,0,-midFrustum);
         };
         
         if(!view.rotatable) {

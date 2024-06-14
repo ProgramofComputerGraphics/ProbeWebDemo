@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+import { defaults } from "./defaults.js";
 import { readFile } from "./file.js";
 
 // Object Import/Export Functions
@@ -101,6 +102,7 @@ function initProjectionDropdown(probeScene, viewManager, cameraViewIndex) {
     }
 
     projectionDropdown.addEventListener("change", updateProjectionDropdown);
+    projectionDropdown.value = defaults.startProjection;
 }
 
 function initFOVSlider(probeScene, viewManager, cameraViewIndex) {
@@ -123,6 +125,9 @@ function initFOVSlider(probeScene, viewManager, cameraViewIndex) {
 
     fovNumber.addEventListener("change", updateFOV);
     fovSlider.addEventListener("input", updateFOV);
+
+    fovNumber.value = defaults.startFOV;
+    fovSlider.value = defaults.startFOV;
 }
 
 function initOrthoSideLength(probeScene, viewManager, cameraViewIndex) {
@@ -152,6 +157,9 @@ function initOrthoSideLength(probeScene, viewManager, cameraViewIndex) {
 
     orthoSideNumber.addEventListener("change", updateOrthoSideLength);
     orthoSideSlider.addEventListener("input", updateOrthoSideLength);
+
+    orthoSideNumber.value = defaults.startOrthoSideLength;
+    orthoSideSlider.value = defaults.startOrthoSideLength;
 }
 
 function initNearPlaneEntry(probeScene, viewManager, cameraViewIndex) {
@@ -167,7 +175,9 @@ function initNearPlaneEntry(probeScene, viewManager, cameraViewIndex) {
         cameraViewCamera.updateProjectionMatrix();
     }
 
-    nearEntry.addEventListener("change", updateNearPlane)
+    nearEntry.addEventListener("change", updateNearPlane);
+
+    nearEntry.value = defaults.startNear;
 }
 
 function initFarPlaneEntry(probeScene, viewManager, cameraViewIndex) {
@@ -183,7 +193,9 @@ function initFarPlaneEntry(probeScene, viewManager, cameraViewIndex) {
         cameraViewCamera.updateProjectionMatrix();
     }
 
-    farEntry.addEventListener("change", updateFarPlane)
+    farEntry.addEventListener("change", updateFarPlane);
+
+    farEntry.value = defaults.startFar;
 }
 
 
@@ -247,14 +259,8 @@ function initShadingModeDropdown(probeScene) {
             shadingColorMenu.className = "subsubmenu-item";
         }
     });
-}
 
-function initMaterialDoubleSidedCheckbox(probeScene) {
-    const doubleSidedCheckbox = document.getElementById("shadingDoubleSidedCheckbox");
-
-    doubleSidedCheckbox.addEventListener("change", () => {
-        probeScene.setShadingDoubleSided(doubleSidedCheckbox.checked);
-    });
+    shadingDropdown.value = defaults.startShadingMode;
 }
 
 function initShadingColorSelect(probeScene) {
@@ -263,6 +269,18 @@ function initShadingColorSelect(probeScene) {
     shadingColor.addEventListener("input", (event) => { 
         probeScene.setObjectColor(event.target.value); 
     });
+
+    shadingColor.value = "#" + defaults.startShadingColor.toString(16);
+}
+
+function initMaterialDoubleSidedCheckbox(probeScene) {
+    const doubleSidedCheckbox = document.getElementById("shadingDoubleSidedCheckbox");
+
+    doubleSidedCheckbox.addEventListener("change", () => {
+        probeScene.setShadingDoubleSided(doubleSidedCheckbox.checked);
+    });
+
+    doubleSidedCheckbox.checked = defaults.startMaterialDoubleSided;
 }
 
 
@@ -274,6 +292,8 @@ function initShowAxesCheckbox(probeScene) {
     showAxesCheckbox.addEventListener("change", () => {
         probeScene.setShowAxes(showAxesCheckbox.checked);
     });
+
+    showAxesCheckbox.checked = defaults.startShowAxes;
 }
 
 function initNearFarPlaneOpacitySlider(probeScene) {
@@ -293,6 +313,9 @@ function initNearFarPlaneOpacitySlider(probeScene) {
 
     opacityNumber.addEventListener("change", updateOpacity);
     opacitySlider.addEventListener("input", updateOpacity);
+
+    opacityNumber.value = defaults.startClippingPlaneOpacity;
+    opacitySlider.value = defaults.startClippingPlaneOpacity;
 }
 
 

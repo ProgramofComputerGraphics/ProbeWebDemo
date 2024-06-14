@@ -5,10 +5,11 @@ import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
 import { AxesObject } from './axesObject.js';
+import { setTestBoolean, testBoolean } from './debugging.js'
+import { defaults } from './defaults.js';
 import { loadLocalFile } from './file.js';
 import { Frustum } from './frustum.js';
-import { deepCopyMeshOrLine } from './utils.js';
-import { setTestBoolean, testBoolean } from './debugging.js';
+import { deepCopyMeshOrLine } from './utils.js';;
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 
@@ -50,27 +51,33 @@ export class ProbeScene {
         this.#objectDefaultScale = new THREE.Vector3(1,1,1);
 
         this.#standardMaterial = new THREE.MeshStandardMaterial({
-            color : 0xffffff,
+            color : defaults.startShadingColor,
             metalness : 0,
             roughness : 1,
             envMapIntensity : 0,
             lightMapIntensity: 0,
             flatShading : true,
-            side : THREE.DoubleSide,
+            side : defaults.startMaterialDoubleSided ? 
+                        THREE.DoubleSide : THREE.FrontSide,
         });
 
         this.#normalMaterial = new THREE.ShaderMaterial({
             clipping : true,
-            side : THREE.DoubleSide,
+            side : defaults.startMaterialDoubleSided ? 
+                        THREE.DoubleSide : THREE.FrontSide,
             vertexShader : loadLocalFile("shaders/normalVertexShader.vs"),
             fragmentShader : loadLocalFile("/shaders/normalFragmentShader.fs")
         });
         
         this.#normalMaterial.extensions.clipCullDistance = true;
 
-        this.#objMaterial = this.#standardMaterial;
-
-        this.#objShadingMode = "flat";
+        this.#objShadingMode = defaults.startShadingMode;
+        if(this.#objShadingMode == "normal") {
+            this.#objMaterial = this.#normalMaterial;
+        }
+        else {
+            this.#objMaterial = this.#standardMaterial;
+        }
 
         this.#frustum = new Frustum();
 
@@ -325,7 +332,8 @@ export class ProbeScene {
             return;
         }
         
-        this.#objMaterial = mode == "normal" ? this.#normalMaterial : this.#standardMaterial;
+        this.#objMaterial = mode == "normal" ? 
+                                this.#normalMaterial : this.#standardMaterial;
 
         this.#updateObjectMaterial();
         this.#objMaterial.needsUpdate = true;

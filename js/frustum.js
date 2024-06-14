@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
-import { addMatrices, deepCopyMeshOrLine } from './utils.js';
 import { setTestBoolean, testBoolean, testBoolean2 } from './debugging.js';
+import { defaults } from './defaults.js';
+import { addMatrices, deepCopyMeshOrLine } from './utils.js';
 
 const frustumSideLineMaterial = new THREE.LineBasicMaterial({color : 0xa0a0a0});
 const nearPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0x4040e0});
@@ -74,14 +75,13 @@ export class Frustum {
 
     #linesOnly;
 
-    // TODO: Auto-sync these values with the default slider values on the webpage
     constructor() {
         // Set default values
-        this.#projection = "perspective";
-        this.#perspFOV = 45;
-        this.#orthoSideLength = 5;
-        this.#near = 1;
-        this.#far = 10;
+        this.#projection = defaults.startProjection;
+        this.#perspFOV = defaults.startFOV;
+        this.#orthoSideLength = defaults.startOrthoSideLength;
+        this.#near = defaults.startNear;
+        this.#far = defaults.startFar;
 
         this.#linesOnly = false;
 
