@@ -1,8 +1,9 @@
 import * as THREE from "three";
 
 import { readFile} from "./file.js";
+import { Frustum } from "./frustum.js";
 import { pointInRectangle } from "./utils.js";
-import { setTestBoolean } from "./debugging.js";
+import { setTestBoolean, setTestBoolean2, testBoolean2 } from "./debugging.js";
 
 const LMB = 0;
 const MMB = 1;
@@ -301,6 +302,66 @@ export class InputManager {
         this.#clearMouseEvent(mouseButton);
     }
 
+    #centerHoveredViewOnFrustum() {
+        // The effect of this function is to pan the camera such that the
+        // frustum is now centered in the view
+
+        // Store necessary data/objects in local variables
+        const viewIndex = this.#viewManager.getHoveredView(this.#currentMousePosition);
+        const viewData = this.#viewManager.getViewData()[viewIndex];
+        const cam = viewData.camera;
+        const camControls = viewData.cameraControls;
+
+        // Break early if camera controls are not defined for the given view
+        if(!camControls)
+            return;
+
+        // Compute reset z position based on current frustum/whether the view
+        // shows the real scene or the imagespace scene
+        let targetZ;
+        if(viewData.imagespace)
+            targetZ = -0.5;
+        else
+            targetZ = -this.#probeScene.getFarPlane()/2;
+
+        // Create the vector for the new camera target
+        const target = new THREE.Vector3(0,0,targetZ);
+
+        // Compute the camera's current displacement from the target
+        const disp = new THREE.Vector3().subVectors(cam.position, target);
+
+        // Get the camera's forward vector
+        const lookAtVector = new THREE.Vector3(0,0,-1);
+        lookAtVector.applyQuaternion(cam.quaternion).normalize();
+
+        // Compute the length of the camera displacement's projection
+        // onto the camera's forward vector
+        const projDisp = disp.dot(lookAtVector);
+        
+        // Set the new position to the projected displacement vector
+        // added to the target
+        const newPos = new THREE.Vector3().addVectors(
+            lookAtVector.multiplyScalar(projDisp),
+            target
+        );
+
+        // Set the camera/camera control position/target variables 
+        cam.position.copy(newPos);
+        cam.lookAt(target);
+        camControls.target = target;
+        camControls.update();
+    }
+
+    #toggleFrustumDistortMode() {
+        const oldMode = this.#probeScene.getFrustumDistortionMode();
+        if(oldMode == Frustum.DISTORT_MODE_KEEP_NEAR_CONSTANT) {
+            this.#probeScene.setFrustumDistortionMode(Frustum.DISTORT_MODE_STANDARD);
+        }
+        else {
+            this.#probeScene.setFrustumDistortionMode(Frustum.DISTORT_MODE_KEEP_NEAR_CONSTANT);
+        }
+    }
+
     keyDown(keyEvent) {
         const key = keyEvent.key;
 
@@ -315,7 +376,7 @@ export class InputManager {
     }
 
     keyUp(keyEvent) {
-        const key = keyEvent.key;
+        const key = keyEvent.key.toLowerCase();
 
         const translateButton = document.getElementById("translateButton");
         const rotateButton = document.getElementById("rotateButton");
@@ -346,58 +407,25 @@ export class InputManager {
             case "Shift":
                 this.#probeScene.setGumballSnap(false);
                 break;
+            case "d":
+                this.#probeScene.activateFrustumTransition();
+                const button = document.getElementById("imageSwapButton");
+                if(button.textContent == "Click to Undistort (D)") {
+                    button.textContent = "Click to Distort (D)";
+                }
+                else if(button.textContent == "Click to Distort (D)") {
+                    button.textContent = "Click to Undistort (D)";
+                }
+                break;
             case "c":
-                // The effect of this function is to pan the camera such that the
-                // frustum is now centered in the view
-
-                // Store necessary data/objects in local variables
-                const viewIndex = this.#viewManager.getHoveredView(this.#currentMousePosition);
-                const viewData = this.#viewManager.getViewData()[viewIndex];
-                const cam = viewData.camera;
-                const camControls = viewData.cameraControls;
-
-                // Break early if camera controls are not defined for the given view
-                if(!camControls)
-                    break;
-
-                // Compute reset z position based on current frustum/whether the view
-                // shows the real scene or the imagespace scene
-                let targetZ;
-                if(viewData.imagespace)
-                    targetZ = -0.5;
-                else
-                    targetZ = -this.#probeScene.getFarPlane()/2;
-
-                // Create the vector for the new camera target
-                const target = new THREE.Vector3(0,0,targetZ);
-
-                // Compute the camera's current displacement from the target
-                const disp = new THREE.Vector3().subVectors(cam.position, target);
-
-                // Get the camera's forward vector
-                const lookAtVector = new THREE.Vector3(0,0,-1);
-                lookAtVector.applyQuaternion(cam.quaternion).normalize();
-
-                // Compute the length of the camera displacement's projection
-                // onto the camera's forward vector
-                const projDisp = disp.dot(lookAtVector);
-                
-                // Set the new position to the projected displacement vector
-                // added to the target
-                const newPos = new THREE.Vector3().addVectors(
-                    lookAtVector.multiplyScalar(projDisp),
-                    target
-                );
-
-                // Set the camera/camera control position/target variables 
-                cam.position.copy(newPos);
-                cam.lookAt(target);
-                camControls.target = target;
-                camControls.update();
+                this.#centerHoveredViewOnFrustum();
+                break;
+            case "m":
+                this.#toggleFrustumDistortMode();
+                console.log("Toggled Frustum Distortion Mode, Press M to Toggle Again");
                 break;
             case " ":
                 setTestBoolean(true);
-                break;
             default:
                 console.log("\'" + key + "\' Pressed!");
                 break;

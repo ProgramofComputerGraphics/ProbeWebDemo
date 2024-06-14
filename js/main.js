@@ -66,6 +66,11 @@ function render() {
 			viewManager.renderCameraOutline(activeView);
 		}
 	}
+
+	if(testBoolean) {
+		console.log("Resetting Test Boolean.");
+		setTestBoolean(false);
+	}
 }
 
 function animate() {

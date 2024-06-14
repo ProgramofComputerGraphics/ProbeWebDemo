@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import { addMatrices, deepCopyMeshOrLine } from './utils.js';
+import { setTestBoolean, testBoolean, testBoolean2 } from './debugging.js';
 
 const frustumSideLineMaterial = new THREE.LineBasicMaterial({color : 0xa0a0a0});
 const nearPlaneLineMaterial = new THREE.LineBasicMaterial({color : 0x4040e0});
@@ -26,6 +27,9 @@ export class Frustum {
     
     static get PERSPECTIVE_FRUSTUM_LAYER() {return 1 };
     static get ORTHO_FRUSTUM_LAYER() {return 2};
+
+    static get DISTORT_MODE_STANDARD() {return 0; }
+    static get DISTORT_MODE_KEEP_NEAR_CONSTANT() { return 1; }
     
     #perspFOV;
     #orthoSideLength;
@@ -37,9 +41,11 @@ export class Frustum {
 
     #isTransitioning;
     #transitioningToImageSpace;
+    #t;
     #transitionStart;
     #transitionDuration;
     #distortionMatrix;
+    #distortMode;
 
     #perspectiveFrustum;
 
@@ -81,9 +87,11 @@ export class Frustum {
 
         this.#isTransitioning = false;
         this.#transitioningToImageSpace = true;
+        this.#t = 1;
         this.#transitionStart = null;
         this.#transitionDuration = 1000;
         this.#distortionMatrix = new THREE.Matrix4();
+        this.#distortMode = Frustum.DISTORT_MODE_KEEP_NEAR_CONSTANT;
 
         // Initialize the groups for the frustum scene objects
         this.#initializeGroups();
@@ -636,37 +644,79 @@ export class Frustum {
         this.#isTransitioning = true;
     }
 
-    tickFrustumDistortionMatrix(mode) {
-        if(mode != "perspective" || mode != "ortho"){
-            mode = this.#projection;
+    isTransitioning() {
+        return this.#isTransitioning;
+    }
+
+    getDistortMode() {
+        return this.#distortMode;
+    }
+
+    setDistortMode(newDistortMode) {
+        this.#distortMode = newDistortMode;
+    }
+
+    #getFullDistortMatrix(projectionMode) {
+        if(projectionMode != "perspective" || projectionMode != "ortho"){
+            projectionMode = this.#projection;
         }
 
-        const cam = mode == "perspective" ? this.#perspectiveCamera : this.#orthoCamera;
+        const cam = projectionMode == "perspective" ? 
+                                        this.#perspectiveCamera : 
+                                        this.#orthoCamera;
 
+        const fullDistortMatrix = new THREE.Matrix4();
+        fullDistortMatrix.multiplyMatrices(cam.projectionMatrix, 
+                                            cam.matrixWorldInverse);
+        fullDistortMatrix.premultiply(toDonConvention);
+        return fullDistortMatrix;
+    }
+
+    #getNoDistortMatrix(projectionMode) {
+        if(this.#distortMode == Frustum.DISTORT_MODE_STANDARD)
+            return new THREE.Matrix4();
+        
+        if(projectionMode != "perspective" || projectionMode != "ortho"){
+            projectionMode = this.#projection;
+        }
+
+        let scaleAmt;
+        if(projectionMode == "perspective"){
+            scaleAmt = 1/(this.getPerspectiveFrustumSlope() * this.#near);
+        }
+        else {
+            scaleAmt = 2/(this.#orthoSideLength);
+        }
+
+        const noDistortMatrix = new THREE.Matrix4();
+        noDistortMatrix.scale(new THREE.Vector3(scaleAmt, scaleAmt, scaleAmt));
+        noDistortMatrix.setPosition(new THREE.Vector3(0,0,this.#near * scaleAmt));
+
+        return noDistortMatrix;
+    }
+
+    tickFrustumDistortionMatrix(projectionMode) {
+        const fullDistortMatrix = this.#getFullDistortMatrix(projectionMode);
+        const noDistortMatrix = this.#getNoDistortMatrix(projectionMode);
+        
         if(!this.#isTransitioning) {
             if(this.#transitioningToImageSpace) {
-                this.#distortionMatrix.multiplyMatrices(cam.projectionMatrix, 
-                                                        cam.matrixWorldInverse);
-                this.#distortionMatrix.premultiply(toDonConvention);
+                this.#distortionMatrix.copy(fullDistortMatrix);
             }
             else {
-                this.#distortionMatrix.identity();
+                this.#distortionMatrix.copy(noDistortMatrix);
             }
             return;
         }
 
         const now = Date.now();
-        const fullDistortMatrix = new THREE.Matrix4();
-        fullDistortMatrix.multiplyMatrices(cam.projectionMatrix, 
-                                            cam.matrixWorldInverse);
-        fullDistortMatrix.premultiply(toDonConvention);
 
-        const noDistortMatrix = new THREE.Matrix4();
-
-        let t = (now - this.#transitionStart) / (this.#transitionDuration);
+        this.#t = (now - this.#transitionStart) / (this.#transitionDuration);
         
-        if(t < 0) { t = 0; this.#isTransitioning = false; }
-        if(t > 1) { t = 1; this.#isTransitioning = false; }
+        if(this.#t < 0) { this.#t = 0; this.#isTransitioning = false; }
+        if(this.#t > 1) { this.#t = 1; this.#isTransitioning = false; }
+
+        const t = this.#t;
 
         if(this.#transitioningToImageSpace) {
             noDistortMatrix.multiplyScalar(1-t);
@@ -680,13 +730,52 @@ export class Frustum {
         this.#distortionMatrix = addMatrices(noDistortMatrix, fullDistortMatrix);
     }
 
+    getImageAxesPosition() {
+        if(this.#distortMode == Frustum.DISTORT_MODE_STANDARD)
+            return new THREE.Vector3();
+
+        const noDistortMatrix = this.#getNoDistortMatrix();
+
+        // if(!this.#isTransitioning) {
+        
+            if(this.#transitioningToImageSpace) {
+                return new THREE.Vector3();
+            }
+            else {
+                const noDistortPos = new THREE.Vector3(0,0,0);
+                return noDistortPos.applyMatrix4(noDistortMatrix);
+            }
+        // }
+        
+        const fullDistortMatrix = this.#getFullDistortMatrix();
+        const trueNoDisortMatrix = new THREE.Matrix4();
+
+        const t = this.#t;
+
+        if(this.#transitioningToImageSpace) {
+            trueNoDisortMatrix.multiplyScalar(1-t);
+            fullDistortMatrix.multiplyScalar(t);
+        }
+        else {
+            trueNoDisortMatrix.multiplyScalar(t);
+            fullDistortMatrix.multiplyScalar(1-t);
+        }
+
+        const realDistortMatrix = addMatrices(trueNoDisortMatrix, fullDistortMatrix);
+        const realDistortMatrixInv = realDistortMatrix.invert();
+
+        const trueOrigin = new THREE.Vector3().applyMatrix4(realDistortMatrixInv);
+
+        return trueOrigin.applyMatrix4(this.#distortionMatrix);
+    }
+
     applyFrustumDistortionToVector(vec){
         return vec.applyMatrix4(this.#distortionMatrix);
     }
 
     // Modified from Stack Overflow Response: 
     // https://discourse.threejs.org/t/transform-individual-vertices-from-position-frombufferattribute/44898
-    applyFrustumDistortionToObject(obj, debug) {
+    applyFrustumDistortionToObject(obj) {
         const positionAttribute = obj.geometry.getAttribute("position");
         const vertCount = positionAttribute.count;
         const vertex = new THREE.Vector3();
@@ -782,14 +871,14 @@ export class Frustum {
     }
 
     // TODO - Refactor this based on new frustum-scene paradigm
-    addDistortedFrustumToScene(scene, mode) {
-        if(mode == null || mode == "")
-            mode = this.#projection;
+    addDistortedFrustumToScene(scene, projectionMode) {
+        if(projectionMode == null || projectionMode == "")
+            projectionMode = this.#projection;
 
         var distortedFrustum = new THREE.Group();
         distortedFrustum.name = "DistortedFrustum"; // TODO: Remove magic name
 
-        if(mode == "perspective") {
+        if(projectionMode == "perspective") {
             // Add Distorted Truncated Pyramid Side Lines
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#perspectiveSideLines);
@@ -816,7 +905,7 @@ export class Frustum {
 
             distortedFrustum.add(distortedFarPlane);
         }
-        else if(mode == "ortho") {
+        else if(projectionMode == "ortho") {
             // Distort Ortho Frustum Side Lines
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoSideLines);
@@ -949,16 +1038,16 @@ export class Frustum {
         return frustumPoints;
     }
 
-    generateFrustumClippingPlanes(mode) {
+    generateFrustumClippingPlanes(projectionMode) {
         const epsilon = 0.001;
         
-        if(mode != "perspective" || mode != "ortho") {
-            mode = this.#projection;
+        if(projectionMode != "perspective" || projectionMode != "ortho") {
+            projectionMode = this.#projection;
         }
 
         let frustumPoints;
 
-        if(mode == "perspective") 
+        if(projectionMode == "perspective") 
             frustumPoints = this.#generatePerspectiveFrustumPoints();
         else 
             frustumPoints = this.#generateOrthoFrustumPoints();

@@ -387,11 +387,11 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
         probeScene.activateFrustumTransition();
         const button = document.getElementById("imageSwapButton");
 
-        if(button.textContent == "Click to Undistort") {
-            button.textContent = "Click to Distort";
+        if(button.textContent == "Click to Undistort (D)") {
+            button.textContent = "Click to Distort (D)";
         }
-        else if(button.textContent == "Click to Distort") {
-            button.textContent = "Click to Undistort";
+        else if(button.textContent == "Click to Distort (D)") {
+            button.textContent = "Click to Undistort (D)";
         }
     }
 }

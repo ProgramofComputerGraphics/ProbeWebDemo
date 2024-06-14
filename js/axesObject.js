@@ -106,6 +106,14 @@ export class AxesObject {
         scene.remove(this.#axesObjectGroup)
     }
 
+    getPosition() {
+        return this.#axesObjectGroup.position;
+    }
+
+    setPosition(newPos) {
+        this.#axesObjectGroup.position.copy(newPos);
+    }
+
     getVisible() {
         return this.#axesObjectGroup.visible;
     }

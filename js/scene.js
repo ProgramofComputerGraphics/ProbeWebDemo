@@ -8,6 +8,7 @@ import { AxesObject } from './axesObject.js';
 import { loadLocalFile } from './file.js';
 import { Frustum } from './frustum.js';
 import { deepCopyMeshOrLine } from './utils.js';
+import { setTestBoolean, testBoolean } from './debugging.js';
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 
@@ -258,6 +259,14 @@ export class ProbeScene {
 
     tickFrustumDistortionMatrix() {
         this.#frustum.tickFrustumDistortionMatrix();
+    }
+
+    getFrustumDistortionMode() {
+        return this.#frustum.getDistortMode();
+    }
+
+    setFrustumDistortionMode(mode) {
+        this.#frustum.setDistortMode(mode);
     }
 
     setShowFrustum(showFrustum){
@@ -616,10 +625,31 @@ export class ProbeScene {
                                                             null);
             }
 
+            // Update axes position in distorted space
+            let imageAxesVisible = this.#imageSpaceSceneAxes.getVisible();
+            if(imageAxesVisible) {
+                if(this.#frustum.isTransitioning() && 
+                    this.#frustum.getDistortMode() == Frustum.DISTORT_MODE_KEEP_NEAR_CONSTANT){
+                    this.#imageSpaceSceneAxes.setVisible(false);
+                }
+                else{
+                    const newPos = this.#frustum.getImageAxesPosition();
+                    this.#imageSpaceSceneAxes.setPosition(newPos); 
+                }   
+            }
+
+            // if(this.#imageSpaceSceneAxes.getVisible()) {
+            //     const newPos = this.#frustum.getImageAxesPosition();
+            //     this.#imageSpaceSceneAxes.setPosition(newPos);
+            // }
+
             renderer.clippingPlanes = this.#frustum.generateFrustumClippingPlanes();
 
             renderer.render(this.#imageSpaceScene, camera);
     
+            // Reset visibility in case it was hidden for transition
+            this.#imageSpaceSceneAxes.setVisible(imageAxesVisible);
+
             this.#imageSpaceScene.remove(distortedObj);
 
             if(showFrustum) {
