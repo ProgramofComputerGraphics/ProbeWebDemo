@@ -7,7 +7,7 @@ export function pointInRectangle(point, rectangle) {
     return containsX && containsY;
 }
 
-export function deepCopyMeshOrLine(meshOrLine, debug) {
+export function deepCopyMeshOrLine(meshOrLine) {
     const distortedObj = meshOrLine.clone(true);
     distortedObj.geometry = meshOrLine.geometry.clone(true);
 

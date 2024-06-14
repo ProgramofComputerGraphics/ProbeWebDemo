@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { readFile} from "./file.js";
 import { pointInRectangle } from "./utils.js";
-import { setTestBoolean } from "./frustum.js";
+import { setTestBoolean } from "./debugging.js";
 
 const LMB = 0;
 const MMB = 1;

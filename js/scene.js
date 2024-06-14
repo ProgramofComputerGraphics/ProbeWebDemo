@@ -472,7 +472,7 @@ export class ProbeScene {
             return;
 
         if(snap) {
-            this.#gumball.setRotationSnap(Math.PI/6);
+            this.#gumball.setRotationSnap(Math.PI/12);
         }
         else {
             this.#gumball.setRotationSnap(null);

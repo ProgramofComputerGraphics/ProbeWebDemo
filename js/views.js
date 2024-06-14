@@ -2,7 +2,6 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-import { Frustum } from './frustum.js';
 import { pointInRectangle } from './utils.js';
 
 const orthoPadding = 0.25;
@@ -506,13 +505,20 @@ export class ViewManager {
         const aspectRatioRatio = camAspect / viewAreaAspect;
 
         const renderer = this.#views[viewIndex].renderer
-        
+
         // Save existing render parameters
         let tempAutoClear = renderer.autoClear;
         renderer.autoClear = false;
 
         let tempRenderViewport = new THREE.Vector4();
         renderer.getViewport(tempRenderViewport);
+
+        // Dispose of existing camera outline geometry
+        this.#cameraOutlineScene.traverse(object => {
+            if(object.geometry)
+                object.geometry.dispose();
+        });
+        this.#cameraOutlineScene.clear();
 
         // Near one constant
         const nearOne = 1;
@@ -541,8 +547,6 @@ export class ViewManager {
         const cameraLineLoop = new THREE.LineLoop(cameraOutlineGeo, this.#cameraOutlineMaterial);
 
         this.#cameraOutlineMaterial.color = this.#views[viewIndex].renderCameraOutlineColor;
-
-        this.#cameraOutlineScene.clear();
         this.#cameraOutlineScene.add(cameraLineLoop);
 
         renderer.setViewport(0,0,viewContainer.clientWidth,viewContainer.clientHeight);

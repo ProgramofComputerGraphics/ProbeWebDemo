@@ -21,12 +21,6 @@ toDonConvention.set( 1,0,0,0,
                       0,0,-0.5,-0.5,
                       0,0,0,1 );
 
-let testBoolean = false;
-
-export function setTestBoolean(bool) {
-    testBoolean = !!bool;
-}
-
 export class Frustum {
     #projection;
     
@@ -808,7 +802,7 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#perspectiveFarPlaneLines);
 
-            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface, testBoolean);
+            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
             this.applyFrustumDistortionToObject(distortedNearPlane, true);
 
             distortedNearPlane.position.set(0,0,0);
@@ -856,8 +850,16 @@ export class Frustum {
 
     removeDistortedFrustumFromScene(scene) {
         for(let i = 0; i < scene.children.length; ++i) {
-            if(scene.children[i].name == "DistortedFrustum") { // TODO: Remove magic name
-                scene.remove(scene.children[i]);
+            const child = scene.children[i];
+            if(child.name == "DistortedFrustum") { // TODO: Remove magic name
+                child.traverse(object => {
+                    if(object.geometry)
+                        object.geometry.dispose();
+                });
+                if(child.geometry)
+                    child.geometry.dispose();
+
+                scene.remove(child);
                 break;
             }
         }
