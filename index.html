@@ -58,8 +58,8 @@
 						<div class="hidden" id="orthoFrustumControls">
 							<div class="subsubmenu-item">
 								<label for="orthoSideSlider"> Frustum Side Length: </label>
-								<input type="number" id="orthoSideEntry" min="0" max="10" value="5" title="Ortho Side Length" class="standard-number">
-								<input type="range" id="orthoSideSlider" min="0" max="10" step="0.1" value="5" class="standard-slider">
+								<input type="number" id="orthoSideEntry" min="0" max="10" value="2.5" title="Ortho Side Length" class="standard-number">
+								<input type="range" id="orthoSideSlider" min="0" max="10" step="0.1" value="2.5" class="standard-slider">
 							</div>
 						</div>
 						<br>
@@ -69,7 +69,7 @@
 						</div>
 						<div class="submenu-item">
 							<label for="farEntry"> Far Plane: &nbsp; </label>
-							<input type="number" id="farEntry" min="0.001" max="20" value="10" title="Near Plane" class="standard-number">
+							<input type="number" id="farEntry" min="0.001" max="20" value="5" title="Near Plane" class="standard-number">
 						</div>
 					</div>
 
@@ -103,6 +103,15 @@
 								<option value="smooth">Smooth Shading </option>
 								<option value="normal">Normal Shading </option>
 							</select>
+						</div>
+						<div class="hidden" id="wireframeControlsMenu">
+							<div><button class="submenu-button" id="detriangulateWireframeButton">Generate De-Triangulated Wireframe</button></div>
+							<div class="hidden" id="useDetriangulatedWireframeMenu">
+								<input type="checkbox" id="useDetriangulatedWireframeCheckbox" class="checkbox" checked>Use De-Triangulated Wireframe</input>
+							</div>
+						</div>
+						<div class="hidden" id="wireframeControlsMenu">
+							
 						</div>
 						<div class="subsubmenu-item" id="colorPickObjMenu">
 							<label for="colorpickObjColor">Object Color:</label>

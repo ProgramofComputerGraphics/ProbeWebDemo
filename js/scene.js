@@ -9,7 +9,8 @@ import { setTestBoolean, testBoolean } from './debugging.js'
 import { defaults } from './defaults.js';
 import { loadLocalFile } from './file.js';
 import { Frustum } from './frustum.js';
-import { deepCopyMeshOrLine } from './utils.js';;
+import { deepCopyMeshOrLine, 
+         generateDetriangulatedWireframe } from './utils.js';;
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 
@@ -19,7 +20,13 @@ const exporter = new OBJExporter();
 const raycaster = new THREE.Raycaster();
 raycaster.params.Line.threshold = 0.1;
 
+let tempTest = null;
+
 export class ProbeScene {
+
+    static get STANDARD_OBJECT_LAYER() {return 1 };
+    static get DETRIANGULATED_WIREFRAME_LAYER() {return 2 };
+
     #object;
 
     #objectDefaultPosition;
@@ -30,6 +37,10 @@ export class ProbeScene {
     #standardMaterial;
     #normalMaterial;
     #objShadingMode;
+
+    #objectGeneratedWireframe;
+    #objectGeneratedWireframeMaterial;
+    #useObjectGeneratedWireframe;
 
     #frustum;
     #realSceneAxes;
@@ -68,6 +79,10 @@ export class ProbeScene {
             vertexShader : loadLocalFile("shaders/normalVertexShader.vs"),
             fragmentShader : loadLocalFile("/shaders/normalFragmentShader.fs")
         });
+
+        this.#objectGeneratedWireframeMaterial = new THREE.LineBasicMaterial({
+            color: defaults.startShadingColor
+        });
         
         this.#normalMaterial.extensions.clipCullDistance = true;
 
@@ -78,6 +93,9 @@ export class ProbeScene {
         else {
             this.#objMaterial = this.#standardMaterial;
         }
+
+        this.#objectGeneratedWireframe = null;
+        this.#useObjectGeneratedWireframe = false;
 
         this.#frustum = new Frustum();
 
@@ -149,6 +167,8 @@ export class ProbeScene {
 
     setObjectToDefaultCube() {
         this.#changeSceneObject(new THREE.Mesh(defaultGeo, this.#objMaterial));
+        this.#object.name = "DefaultCube";
+        this.#object.layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
     
         // Set default object tranformation for default cube
         const near = this.#frustum.getNear();
@@ -160,6 +180,8 @@ export class ProbeScene {
         this.#objectDefaultScale.set(1,1,1);
 
         this.resetObjectTransform();
+
+        this.generateDetriangulatedWireframe();
     }
     
     #addLoadedObjectToScene(loadedObject) {
@@ -170,6 +192,7 @@ export class ProbeScene {
         const mat = this.#objMaterial;
         this.#object.children.forEach(function(mesh) {
             try {
+                mesh.layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
                 mesh.material = mat;
             }
             catch(error) {
@@ -178,8 +201,9 @@ export class ProbeScene {
             }
         });
 
-        console.log(this.#object);
-        console.log(this.#object.children[0].material);
+        this.#objectGeneratedWireframe = null;
+
+        console.log("Loaded Object:", this.#object);
     }
 
     getCurrentObject() {
@@ -195,7 +219,8 @@ export class ProbeScene {
             return;
         }
 
-        const object = loader.parse(objectText);  
+        const object = loader.parse(objectText);
+        object.name = "LoadedObject";
         this.#addLoadedObjectToScene(object);
     }
 
@@ -293,7 +318,8 @@ export class ProbeScene {
         const mat = this.#objMaterial;
         this.#object.children.forEach(function(mesh) {
             try {
-                mesh.material = mat;
+                if(!(mesh instanceof THREE.Line))
+                    mesh.material = mat;
             }
             catch(error) {
                 console.log("Non-mesh element encountered during material update; " +
@@ -302,14 +328,35 @@ export class ProbeScene {
         });
     }
 
+    isDetriangulatedWireframeGenerated() {
+        return this.#objectGeneratedWireframe != null;
+    }
+
+    generateDetriangulatedWireframe() {
+        if(this.#objectGeneratedWireframe != null){
+            this.#objectGeneratedWireframe.geometry.dispose();
+            this.#object.remove(this.#objectGeneratedWireframe);
+        }
+
+        // TODO - Handle more cases (this is a quick fix since the OBJ loader
+        // always loads in as a group with one mesh, and the default cube is
+        // is just a mesh)
+        const mesh = (this.#object instanceof THREE.Mesh ? this.#object : this.#object.children[0]);
+        this.#objectGeneratedWireframe = generateDetriangulatedWireframe(mesh, 
+                                                        this.#objectGeneratedWireframeMaterial,
+                                                        true);
+
+        this.#objectGeneratedWireframe.layers.set(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
+        this.#objectGeneratedWireframe.name = "DetriangulatedWireframe";
+        this.#object.add(this.#objectGeneratedWireframe);
+        
+        document.getElementById("detriangulateWireframeButton").disabled = true;
+        this.setUseDetriangulatedWireframe(true);
+    }
+
     setShadingMode(mode) { 
         // Handle changes to standard material   
         switch(mode) {
-            case "wire":
-                this.#standardMaterial.wireframe = true;
-                this.#standardMaterial.flatShading = false;
-                this.#standardMaterial.emissive = this.#standardMaterial.color;
-                break;
             case "flat":
                 this.#standardMaterial.wireframe = false;
                 this.#standardMaterial.flatShading = true;
@@ -320,23 +367,42 @@ export class ProbeScene {
                 this.#standardMaterial.flatShading = false;
                 this.#standardMaterial.emissive = new THREE.Color(0x000000);
                 break;
+            case "wire":
+                this.#standardMaterial.wireframe = true;
+                this.#standardMaterial.flatShading = false;
+                this.#standardMaterial.emissive = this.#standardMaterial.color;
+                break;
         }
 
+        
         const newModeIsNormal = mode == "normal";
         const oldModeIsNormal = this.#objShadingMode == "normal";
 
         this.#objShadingMode = mode;
 
+        // If material has switched from normal to another mode, update active material on 
+        // scene object/children
         if(newModeIsNormal == oldModeIsNormal) {
             this.#objMaterial.needsUpdate = true;
-            return;
         }
-        
-        this.#objMaterial = mode == "normal" ? 
-                                this.#normalMaterial : this.#standardMaterial;
+        else {
+            this.#objMaterial = mode == "normal" ? 
+                                    this.#normalMaterial : this.#standardMaterial;
 
-        this.#updateObjectMaterial();
-        this.#objMaterial.needsUpdate = true;
+            this.#updateObjectMaterial();
+            this.#objMaterial.needsUpdate = true;
+        }
+    }
+
+    getUseDetriangulatedWireframe() {
+        return this.#useObjectGeneratedWireframe;
+    }
+
+    setUseDetriangulatedWireframe(useWireframe) {
+        this.#useObjectGeneratedWireframe = useWireframe;
+
+        const useDeTriCheckbox = document.getElementById("useDetriangulatedWireframeCheckbox");
+        useDeTriCheckbox.checked = !!useWireframe;
     }
 
     setShadingDoubleSided(doubleSided) {
@@ -348,11 +414,13 @@ export class ProbeScene {
     }
 
     setObjectColor(color) {
-        this.#objMaterial.color = new THREE.Color(color);
+        const threeColor = new THREE.Color(color);
+        this.#standardMaterial.color = threeColor;
+        this.#objectGeneratedWireframeMaterial.color = threeColor; 
         if(this.#objShadingMode == "wire") {
-            this.#objMaterial.emissive = new THREE.Color(color);
+            this.#standardMaterial.emissive = new THREE.Color(color);
         }
-        this.#objMaterial.needsUpdate = true;
+        this.#standardMaterial.needsUpdate = true;
     }
 
     setNearFarOpacity(opacity) {
@@ -542,38 +610,38 @@ export class ProbeScene {
             camera.layers.enable(Frustum.PERSPECTIVE_FRUSTUM_LAYER);
             camera.layers.disable(Frustum.ORTHO_FRUSTUM_LAYER);
         }
+
+        if(this.#objShadingMode == "wire" && 
+            this.#objectGeneratedWireframe != null && 
+            this.#useObjectGeneratedWireframe)
+        {
+            camera.layers.disable(ProbeScene.STANDARD_OBJECT_LAYER);
+            camera.layers.enable(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
+        }
+        else {
+            camera.layers.enable(ProbeScene.STANDARD_OBJECT_LAYER);
+            camera.layers.disable(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
+        }
     }
 
     #getDistortedObject() {
-        var distortedObj;
-        
-        if(this.#object instanceof THREE.Mesh || 
-            this.#object instanceof THREE.Line) 
-        {
-            distortedObj = deepCopyMeshOrLine(this.#object);
-            this.#frustum.applyFrustumDistortionToObject(distortedObj);
-        }
-        else { 
-            distortedObj = new THREE.Object3D();
-            
-            for(let i = 0; i < this.#object.children.length; ++i) {
-                if(this.#object.children[i] instanceof THREE.Mesh || 
-                    this.#object.children[i] instanceof THREE.Line)
-                {
-                    const childCopy = deepCopyMeshOrLine(this.#object.children[i]);
-                    
-                    this.#frustum.applyFrustumDistortionToObject(childCopy);
+        const distortedObj = new THREE.Object3D();
 
-                    childCopy.position.set(0,0,0);
-                    distortedObj.add(childCopy);                                    
-                }
-                else {
-                    console.log("Non-mesh/line element detected in scene object;" + 
-                                "cannot apply distortion!");
-                }
+        this.#object.traverse((descendant) => {
+            if(descendant instanceof THREE.Mesh || 
+                descendant instanceof THREE.Line)
+            {
+                const childCopy = deepCopyMeshOrLine(descendant, true);
+                
+                this.#frustum.applyFrustumDistortionToObject(childCopy);
+
+                childCopy.position.set(0,0,0);
+                childCopy.name += "_Distorted";
+                distortedObj.add(childCopy); 
             }
-        }
+        });
 
+        distortedObj.name = "DistortedObject"
         distortedObj.position.set(0,0,0);
         distortedObj.rotation.set(0,0,0,"XYZ");
         distortedObj.scale.set(1,1,1);
@@ -582,26 +650,14 @@ export class ProbeScene {
     }
 
     #removeDistortedObject(obj) {
-        if(obj instanceof THREE.Mesh || 
-            obj instanceof THREE.Line)
-        {
-            obj.geometry.dispose();
-        }
-        else {
-            for(let i = 0; i < obj.children.length; ++i) {
-                const child = obj.children[i];
-                if(child instanceof THREE.Mesh || 
-                    child instanceof THREE.Line)
-                {
-                    child.geometry.dispose();
-                    obj.remove(child);
-                }
-                else {
-                    console.log("Non-mesh/line element detected in object;" + 
-                                "cannot deallocate GPU resources!");
-                }
+        obj.traverse((descendant) => {
+            if(descendant.geometry)
+            {
+                descendant.geometry.dispose();
             }
-        }
+        });
+
+        obj.clear();
     }
 
     renderScene(viewIndex, renderer, camera, imagespace, showFrustum, linesOnly, showAxes)
@@ -626,8 +682,8 @@ export class ProbeScene {
         // geometry and then render the scene
         else {
             const distortedObj = this.#getDistortedObject();
-            this.#imageSpaceScene.add(distortedObj);
-    
+            this.#imageSpaceScene.add(distortedObj);   
+
             if(showFrustum) {
                 this.#frustum.addDistortedFrustumToScene(this.#imageSpaceScene, 
                                                             null);
@@ -704,5 +760,7 @@ function initSceneLights(scene) {
 
     scene.add(ambientLight);
 }
+
+raycaster.layers.enable(ProbeScene.STANDARD_OBJECT_LAYER);
 
 

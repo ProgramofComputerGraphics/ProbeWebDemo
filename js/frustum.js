@@ -26,8 +26,8 @@ toDonConvention.set( 1,0,0,0,
 export class Frustum {
     #projection;
     
-    static get PERSPECTIVE_FRUSTUM_LAYER() {return 1 };
-    static get ORTHO_FRUSTUM_LAYER() {return 2};
+    static get PERSPECTIVE_FRUSTUM_LAYER() {return 3 };
+    static get ORTHO_FRUSTUM_LAYER() {return 4 };
 
     static get DISTORT_MODE_STANDARD() {return 0; }
     static get DISTORT_MODE_KEEP_NEAR_CONSTANT() { return 1; }
@@ -735,38 +735,14 @@ export class Frustum {
             return new THREE.Vector3();
 
         const noDistortMatrix = this.#getNoDistortMatrix();
-
-        // if(!this.#isTransitioning) {
         
-            if(this.#transitioningToImageSpace) {
-                return new THREE.Vector3();
-            }
-            else {
-                const noDistortPos = new THREE.Vector3(0,0,0);
-                return noDistortPos.applyMatrix4(noDistortMatrix);
-            }
-        // }
-        
-        const fullDistortMatrix = this.#getFullDistortMatrix();
-        const trueNoDisortMatrix = new THREE.Matrix4();
-
-        const t = this.#t;
-
         if(this.#transitioningToImageSpace) {
-            trueNoDisortMatrix.multiplyScalar(1-t);
-            fullDistortMatrix.multiplyScalar(t);
+            return new THREE.Vector3();
         }
         else {
-            trueNoDisortMatrix.multiplyScalar(t);
-            fullDistortMatrix.multiplyScalar(1-t);
+            const noDistortPos = new THREE.Vector3(0,0,0);
+            return noDistortPos.applyMatrix4(noDistortMatrix);
         }
-
-        const realDistortMatrix = addMatrices(trueNoDisortMatrix, fullDistortMatrix);
-        const realDistortMatrixInv = realDistortMatrix.invert();
-
-        const trueOrigin = new THREE.Vector3().applyMatrix4(realDistortMatrixInv);
-
-        return trueOrigin.applyMatrix4(this.#distortionMatrix);
     }
 
     applyFrustumDistortionToVector(vec){

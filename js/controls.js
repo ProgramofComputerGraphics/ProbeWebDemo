@@ -7,14 +7,21 @@ import { readFile } from "./file.js";
 
 function initResetToCubeButton(probeScene){
     const translateButton = document.getElementById("resetToCube");
+    const deTriButton = document.getElementById("detriangulateWireframeButton");
+    const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
 
     translateButton.addEventListener("click", () => {
         probeScene.setObjectToDefaultCube();
+
+        deTriButton.disabled = true;
+        deTriCheckboxMenu.className = "";
     });
 }
 
 function initLoadObjectFileEntry(probeScene) {
     const loadObjectFileEntry = document.getElementById("loadObjectFileEntry");
+    const deTriButton = document.getElementById("detriangulateWireframeButton");
+    const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
 
     loadObjectFileEntry.addEventListener('change', async () => {
         let fileText;
@@ -28,6 +35,9 @@ function initLoadObjectFileEntry(probeScene) {
             // Call the probeScene's loadObjectFromText method with the file content
             probeScene.loadObjectFromText(fileText);
         }
+
+        deTriButton.disabled = false;
+        deTriCheckboxMenu.className = "hidden";
     });
 }
 
@@ -248,19 +258,57 @@ function initTransformWidgetButtons(probeScene, viewManager) {
 
 function initShadingModeDropdown(probeScene) {
     const shadingDropdown = document.getElementById("shadingDropdown");
-    const shadingColorMenu = document.getElementById("colorPickObjMenu")
+    const shadingColorMenu = document.getElementById("colorPickObjMenu");
+    const wireframeControlsMenu = document.getElementById("wireframeControlsMenu");
+    const useDetriangulatedWireframeMenu = document.getElementById("useDetriangulatedWireframeMenu");
 
     shadingDropdown.addEventListener("change", () => { 
         probeScene.setShadingMode(shadingDropdown.value); 
+        
+        // Shading Color Menu
         if(shadingDropdown.value == "normal") {
             shadingColorMenu.className = "hidden";
         }
         else {
             shadingColorMenu.className = "subsubmenu-item";
         }
+
+        // Wireframe Controls Menu
+        if(shadingDropdown.value == "wire") {
+            wireframeControlsMenu.className = "subsubmenu-item";
+            if(probeScene.isDetriangulatedWireframeGenerated()) {
+                useDetriangulatedWireframeMenu.className = "";
+            }
+            else {
+                useDetriangulatedWireframeMenu.className = "hidden";
+            }
+        }
+        else {
+            wireframeControlsMenu.className = "hidden";
+        }
     });
 
     shadingDropdown.value = defaults.startShadingMode;
+}
+
+function initDetriangulateWireframeButton(probeScene) {
+    const deTriButton = document.getElementById("detriangulateWireframeButton");
+    const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
+    
+    deTriButton.addEventListener("click", () => {
+        probeScene.generateDetriangulatedWireframe();
+
+        deTriButton.disabled = true;
+        deTriCheckboxMenu.className = "";
+    });
+}
+
+function initDetriangulateWireframeCheckbox(probeScene) {
+    const deTriCheckbox = document.getElementById("useDetriangulatedWireframeCheckbox");
+    
+    deTriCheckbox.addEventListener("click", () => {
+        probeScene.setUseDetriangulatedWireframe(deTriCheckbox.checked);
+    });
 }
 
 function initShadingColorSelect(probeScene) {
@@ -341,6 +389,8 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
 
     // Shading Controls
     initShadingModeDropdown(probeScene);
+    initDetriangulateWireframeButton(probeScene);
+    initDetriangulateWireframeCheckbox(probeScene);
     initMaterialDoubleSidedCheckbox(probeScene);
     initShadingColorSelect(probeScene);
 
