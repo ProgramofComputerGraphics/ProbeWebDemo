@@ -26,11 +26,13 @@ toDonConvention.set( 1,0,0,0,
 export class Frustum {
     #projection;
     
-    static get PERSPECTIVE_FRUSTUM_LAYER() {return 3 };
-    static get ORTHO_FRUSTUM_LAYER() {return 4 };
+    static get PERSPECTIVE_FRUSTUM_LAYER() { return 3 };
+    static get ORTHO_FRUSTUM_LAYER() { return 4 };
 
-    static get DISTORT_MODE_STANDARD() {return 0; }
+    static get DISTORT_MODE_STANDARD() { return 0; }
     static get DISTORT_MODE_KEEP_NEAR_CONSTANT() { return 1; }
+
+    static get DISTORTED_FRUSTUM_NAME() { return "DistortedFrustum"; }
     
     #perspFOV;
     #orthoSideLength;
@@ -507,8 +509,7 @@ export class Frustum {
     }
 
     #updateFrustum(mode) {        
-        // TODO: Possibly handle non-null cases that don't match the intended options
-        if(mode == null || mode == "both")
+        if(mode != "perspective" || mode != "ortho")
             mode = "all";
 
         if(mode == "all" || mode == "perspective"){
@@ -846,13 +847,12 @@ export class Frustum {
         }
     }
 
-    // TODO - Refactor this based on new frustum-scene paradigm
     addDistortedFrustumToScene(scene, projectionMode) {
         if(projectionMode == null || projectionMode == "")
             projectionMode = this.#projection;
 
         var distortedFrustum = new THREE.Group();
-        distortedFrustum.name = "DistortedFrustum"; // TODO: Remove magic name
+        distortedFrustum.name = Frustum.DISTORTED_FRUSTUM_NAME;
 
         if(projectionMode == "perspective") {
             // Add Distorted Truncated Pyramid Side Lines
@@ -916,7 +916,7 @@ export class Frustum {
     removeDistortedFrustumFromScene(scene) {
         for(let i = 0; i < scene.children.length; ++i) {
             const child = scene.children[i];
-            if(child.name == "DistortedFrustum") { // TODO: Remove magic name
+            if(child.name == Frustum.DISTORTED_FRUSTUM_NAME) {
                 child.traverse(object => {
                     if(object.geometry)
                         object.geometry.dispose();

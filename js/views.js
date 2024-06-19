@@ -278,7 +278,6 @@ export class ViewManager {
         if (this.#activeView != -1) {
             const viewRect = this.getViewArea(this.#activeView);
             
-            // TODO - Check for boundary edge cases (reversed y-direction could mess things up)
             return pointInRectangle(mouseCoords, viewRect) ? this.#activeView : -1;
         }
     
@@ -286,7 +285,6 @@ export class ViewManager {
         for(let i = 0; i < this.#views.length; ++i) {
             const viewRect = this.getViewArea(i);
             
-            // TODO - Check for boundary edge cases (reversed y-direction could mess things up)
             if(pointInRectangle(mouseCoords, viewRect)) {
                 return i;
             }

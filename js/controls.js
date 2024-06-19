@@ -5,6 +5,8 @@ import { readFile } from "./file.js";
 
 // Object Import/Export Functions
 
+let lastFile;
+
 function initResetToCubeButton(probeScene){
     const translateButton = document.getElementById("resetToCube");
     const deTriButton = document.getElementById("detriangulateWireframeButton");
@@ -13,8 +15,8 @@ function initResetToCubeButton(probeScene){
     translateButton.addEventListener("click", () => {
         probeScene.setObjectToDefaultCube();
 
-        deTriButton.disabled = true;
-        deTriCheckboxMenu.className = "";
+        deTriButton.disabled = false;
+        deTriCheckboxMenu.className = "hidden";
     });
 }
 
@@ -28,16 +30,18 @@ function initLoadObjectFileEntry(probeScene) {
 
         // Get the file from the input element
         const file = loadObjectFileEntry.files[0];
-        if (file) {
+        if (file && file != lastFile) {
+            lastFile = file;
+
             // Set up a Promise to handle the file read process
             fileText = await readFile(file);
 
             // Call the probeScene's loadObjectFromText method with the file content
             probeScene.loadObjectFromText(fileText);
-        }
 
-        deTriButton.disabled = false;
-        deTriCheckboxMenu.className = "hidden";
+            deTriButton.disabled = false;
+            deTriCheckboxMenu.className = "hidden";
+        }
     });
 }
 
@@ -294,12 +298,24 @@ function initShadingModeDropdown(probeScene) {
 function initDetriangulateWireframeButton(probeScene) {
     const deTriButton = document.getElementById("detriangulateWireframeButton");
     const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
-    
-    deTriButton.addEventListener("click", () => {
-        probeScene.generateDetriangulatedWireframe();
 
-        deTriButton.disabled = true;
-        deTriCheckboxMenu.className = "";
+    console.log("Button Pressed!");
+
+    deTriButton.addEventListener("click", () => {
+        document.getElementById('loadingPopup').className = "loading-popup";
+
+        // Delay the execution of the long function
+        setTimeout(() => {
+            probeScene.generateObjectDetriangulatedWireframe().then(() => {
+                document.getElementById('loadingPopup').className = "hidden";
+            }).catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingPopup').className = "hidden";
+            });
+
+            deTriButton.disabled = true;
+            deTriCheckboxMenu.className = "";
+        }, 250);
     });
 }
 

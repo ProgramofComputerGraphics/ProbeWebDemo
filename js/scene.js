@@ -10,7 +10,7 @@ import { defaults } from './defaults.js';
 import { loadLocalFile } from './file.js';
 import { Frustum } from './frustum.js';
 import { deepCopyMeshOrLine, 
-         generateDetriangulatedWireframe } from './utils.js';;
+        generateDetriangulatedWireframe } from './utils.js';
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 
@@ -163,6 +163,12 @@ export class ProbeScene {
         this.#object = newObject;
         this.#realScene.add(this.#object);
         this.#object.userData.clickable = true;
+
+        this.#objectGeneratedWireframe = null;
+
+        if(this.#gumball){
+            this.clearGumball();
+        }
     }
 
     setObjectToDefaultCube() {
@@ -180,13 +186,14 @@ export class ProbeScene {
         this.#objectDefaultScale.set(1,1,1);
 
         this.resetObjectTransform();
-
-        this.generateDetriangulatedWireframe();
     }
     
     #addLoadedObjectToScene(loadedObject) {
         // Swap object to the newly loaded object
         this.#changeSceneObject(loadedObject);
+        this.#object.name = "LoadedObject";
+        this.#object.layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
+
     
         // Change materials on loaded object to the scene material
         const mat = this.#objMaterial;
@@ -201,9 +208,51 @@ export class ProbeScene {
             }
         });
 
-        this.#objectGeneratedWireframe = null;
+        // Here we take advantage of the fact that the object is imported
+        // such that the object origin is at 0,0,0. The logic does not work
+        // if the object has already been translated.
+        
+        // Get the object's bounding box for scaling purposes
+        const boundingBox = new THREE.Box3().setFromObject(this.#object, true);
 
-        console.log("Loaded Object:", this.#object);
+        // Get the default near/far plane
+        const near = defaults.startNear;
+        const far = defaults.startFar;
+
+        // Get the object's translation for centering purposes
+        const translation = new THREE.Vector3();
+        boundingBox.getCenter(translation);
+
+        this.#object.position.z = -2.5;
+
+        const scaleFactorZ = (far - near) / 2 /
+                                (boundingBox.max.z - boundingBox.min.z);
+
+        
+        // Determine how small to shrink the object to fit inside the perspective
+        // frustum (to avoid strange behavior when the frustum is grown/shrunk, the 
+        // starting frustum angle is used).
+        const assumedFrustumSlope = Math.tan(defaults.startFOV * Math.PI / 360);
+        const frustumZAt25 = 0.75 * near + 0.25 * far;
+        const frustumSizeAt25 = assumedFrustumSlope * frustumZAt25 * 2;
+
+        const scaleFactorX = frustumSizeAt25 / (boundingBox.max.x - boundingBox.min.x);
+        const scaleFactorY = frustumSizeAt25 / (boundingBox.max.y - boundingBox.min.y);
+
+        const scaleFactor = Math.min(scaleFactorZ, 
+                                    Math.min(scaleFactorX, scaleFactorY));
+
+        translation.multiplyScalar(scaleFactor);
+
+        const translateZ = -(near + far) / 2 - translation.z;
+
+        this.#objectDefaultPosition = new THREE.Vector3(-translation.x,
+                                                        -translation.y,
+                                                        translateZ);
+        this.#objectDefaultRotation.set(0,0,0,"XYZ");
+        this.#objectDefaultScale.set(scaleFactor,scaleFactor,scaleFactor);
+
+        this.resetObjectTransform();
     }
 
     getCurrentObject() {
@@ -220,7 +269,6 @@ export class ProbeScene {
         }
 
         const object = loader.parse(objectText);
-        object.name = "LoadedObject";
         this.#addLoadedObjectToScene(object);
     }
 
@@ -332,26 +380,34 @@ export class ProbeScene {
         return this.#objectGeneratedWireframe != null;
     }
 
-    generateDetriangulatedWireframe() {
-        if(this.#objectGeneratedWireframe != null){
-            this.#objectGeneratedWireframe.geometry.dispose();
-            this.#object.remove(this.#objectGeneratedWireframe);
-        }
-
-        // TODO - Handle more cases (this is a quick fix since the OBJ loader
-        // always loads in as a group with one mesh, and the default cube is
-        // is just a mesh)
-        const mesh = (this.#object instanceof THREE.Mesh ? this.#object : this.#object.children[0]);
-        this.#objectGeneratedWireframe = generateDetriangulatedWireframe(mesh, 
-                                                        this.#objectGeneratedWireframeMaterial,
-                                                        true);
-
-        this.#objectGeneratedWireframe.layers.set(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
-        this.#objectGeneratedWireframe.name = "DetriangulatedWireframe";
-        this.#object.add(this.#objectGeneratedWireframe);
-        
-        document.getElementById("detriangulateWireframeButton").disabled = true;
-        this.setUseDetriangulatedWireframe(true);
+    generateObjectDetriangulatedWireframe() {        
+        return new Promise((resolve, reject) => {
+            try {
+                if (this.#objectGeneratedWireframe != null) {
+                    this.#objectGeneratedWireframe.geometry.dispose();
+                    this.#object.remove(this.#objectGeneratedWireframe);
+                }
+    
+                // TODO - Handle more cases (this is a quick fix since the OBJ loader
+                // always loads in as a group with one mesh, and the default cube is
+                // just a mesh)
+                const mesh = (this.#object instanceof THREE.Mesh ? this.#object : this.#object.children[0]);
+                this.#objectGeneratedWireframe = generateDetriangulatedWireframe(mesh, 
+                                                            this.#objectGeneratedWireframeMaterial,
+                                                            true);
+    
+                this.#objectGeneratedWireframe.layers.set(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
+                this.#objectGeneratedWireframe.name = "DetriangulatedWireframe";
+                this.#object.add(this.#objectGeneratedWireframe);
+    
+                document.getElementById("detriangulateWireframeButton").disabled = true;
+                this.setUseDetriangulatedWireframe(true);
+    
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
     setShadingMode(mode) { 
