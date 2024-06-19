@@ -5,15 +5,20 @@ import { readFile } from "./file.js";
 
 // Object Import/Export Functions
 
-let lastFile;
+let lastFile = null;
 
 function initResetToCubeButton(probeScene){
     const translateButton = document.getElementById("resetToCube");
+    const loadObjectFileEntry = document.getElementById("loadObjectFileEntry");
     const deTriButton = document.getElementById("detriangulateWireframeButton");
     const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
 
     translateButton.addEventListener("click", () => {
         probeScene.setObjectToDefaultCube();
+        
+        // Clear file entry element & last file variable
+        loadObjectFileEntry.value = null;
+        lastFile = null;
 
         deTriButton.disabled = false;
         deTriCheckboxMenu.className = "hidden";
@@ -43,6 +48,16 @@ function initLoadObjectFileEntry(probeScene) {
             deTriCheckboxMenu.className = "hidden";
         }
     });
+}
+
+function initFitLoadedObjectToFrustum(probeScene) {
+    const fitToFrustumCheckbox = document.getElementById("loadObjectFitToFrustumCheckbox");
+
+    fitToFrustumCheckbox.addEventListener("change", () => {
+        probeScene.setFitLoadedObjectToFrustum(fitToFrustumCheckbox.checked);
+    });
+
+    fitToFrustumCheckbox.checked = defaults.startFitLoadedObjectToFrustum;
 }
 
 function initExportObjectButton(probeScene) {
@@ -390,6 +405,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     // Object Import/Export Controls
     initResetToCubeButton(probeScene);
     initLoadObjectFileEntry(probeScene);
+    initFitLoadedObjectToFrustum(probeScene);
     initExportObjectButton(probeScene);
 
     // Frustum Controls

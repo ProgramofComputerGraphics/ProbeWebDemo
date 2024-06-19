@@ -6,6 +6,8 @@ export const defaults = {
     startNear : 1,
     startFar : 5,
 
+    startFitLoadedObjectToFrustum : true,
+
     startShadingMode : "flat",
     startShadingColor : 0xffffff,
     startMaterialDoubleSided : true,

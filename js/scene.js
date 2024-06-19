@@ -29,6 +29,8 @@ export class ProbeScene {
 
     #object;
 
+    #fitLoadedObjectToFrustum 
+
     #objectDefaultPosition;
     #objectDefaultRotation;
     #objectDefaultScale;
@@ -57,6 +59,8 @@ export class ProbeScene {
         // Set global variables    
         this.#object = null;
         
+        this.#fitLoadedObjectToFrustum = defaults.startFitLoadedObjectToFrustum;
+
         this.#objectDefaultPosition = new THREE.Vector3(0,0,2.5);
         this.#objectDefaultRotation = new THREE.Vector3(0,0,0);
         this.#objectDefaultScale = new THREE.Vector3(1,1,1);
@@ -208,6 +212,21 @@ export class ProbeScene {
             }
         });
 
+        // If the 'fit to frustum' option is turned off, set the default 
+        // transformation to identity
+        if(!this.#fitLoadedObjectToFrustum) {
+            this.#objectDefaultPosition = new THREE.Vector3(0,0,0);
+            this.#objectDefaultRotation.set(0,0,0,"XYZ");
+            this.#objectDefaultScale.set(1,1,1);
+
+            this.resetObjectTransform();
+
+            return;
+        }
+
+        // Otherwise, determine the appropriate translation/scale for the 
+        // loaded object based on its bounding box
+        // 
         // Here we take advantage of the fact that the object is imported
         // such that the object origin is at 0,0,0. The logic does not work
         // if the object has already been translated.
@@ -259,8 +278,7 @@ export class ProbeScene {
         return object;
     }
 
-    loadObjectFromText(objectText)
-    {
+    loadObjectFromText(objectText) {
         // Immediately fail for malformed paths
         if(objectText == null || objectText == "")
         {  
@@ -270,6 +288,10 @@ export class ProbeScene {
 
         const object = loader.parse(objectText);
         this.#addLoadedObjectToScene(object);
+    }
+
+    setFitLoadedObjectToFrustum(fitToFrustum) {
+        this.#fitLoadedObjectToFrustum = fitToFrustum;
     }
 
     saveDistortedObjectToText() {
@@ -349,7 +371,7 @@ export class ProbeScene {
         this.#frustum.setDistortMode(mode);
     }
 
-    setShowFrustum(showFrustum){
+    setShowFrustum(showFrustum) {
         this.#frustum.setVisible(showFrustum);
     }
 
