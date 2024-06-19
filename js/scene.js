@@ -22,6 +22,18 @@ raycaster.params.Line.threshold = 0.1;
 
 let tempTest = null;
 
+const translateEntryX = document.getElementById("translationXEntry");
+const translateEntryY = document.getElementById("translationYEntry");
+const translateEntryZ = document.getElementById("translationZEntry");
+
+const rotateEntryX = document.getElementById("rotationXEntry");
+const rotateEntryY = document.getElementById("rotationYEntry");
+const rotateEntryZ = document.getElementById("rotationZEntry");
+
+const scaleEntryX = document.getElementById("scaleXEntry");
+const scaleEntryY = document.getElementById("scaleYEntry");
+const scaleEntryZ = document.getElementById("scaleZEntry");
+
 export class ProbeScene {
 
     static get STANDARD_OBJECT_LAYER() {return 1 };
@@ -574,7 +586,13 @@ export class ProbeScene {
         }
         else {
             this.#gumball.mode = this.#gumballMode;
+
+            this.#gumball.addEventListener("change", () => {
+                this.#updateTransformDOMElements();
+            });
         }
+
+        this.#gumball.setSpace("world");
 
         // Add gumball to scene
         this.#realScene.add(this.#gumball);
@@ -623,11 +641,21 @@ export class ProbeScene {
             return;
         }
 
-        this.#gumballMode = mode;
-
         if(this.#gumball != null && !this.#gumball.userData.onlyTranslate){
             this.#gumball.mode = mode;
+
+            if(mode == this.#gumballMode) {
+                if(this.#gumball.space == "world")
+                    this.#gumball.setSpace("local");
+                else
+                    this.#gumball.setSpace("world");
+            }
+            else {
+                this.#gumball.setSpace("world");
+            }
         }
+
+        this.#gumballMode = mode;
     }
 
     setGumballSnap(snap) {
@@ -675,6 +703,100 @@ export class ProbeScene {
                                     "XYZ");
         this.#object.scale.copy(this.#objectDefaultScale);
         this.#object.updateMatrixWorld();
+
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectDefaultTransform() {
+        this.#objectDefaultPosition.copy(this.#object.position);
+        this.#objectDefaultRotation.set(this.#object.rotation.x,
+                                        this.#object.rotation.y,
+                                        this.#object.rotation.z,
+                                        "XYZ");
+        this.#objectDefaultScale.copy(this.#object.scale);
+    }
+
+    setObjectPositionX(newX) {
+        this.#object.position.x = parseFloat(newX);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectPositionY(newY) {
+        this.#object.position.y = parseFloat(newY);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectPositionZ(newZ) {
+        this.#object.position.z = parseFloat(newZ);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectPosition(newPos) {
+        if(newPos instanceof new THREE.Vector3)
+            this.#object.position.copy(newPos);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectRotationX(newX) {
+        this.#object.rotation.x = parseFloat(newX) * Math.PI / 180;
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectRotationY(newY) {
+        this.#object.rotation.y = parseFloat(newY) * Math.PI / 180;
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectRotationZ(newZ) {
+        this.#object.rotation.z = parseFloat(newZ) * Math.PI / 180;
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectRotation(newRot) {
+        if(newRot instanceof THREE.Vector3) {
+            this.#object.rotation.set(newRot.x * Math.PI / 180, 
+                                        newRot.y * Math.PI / 180, 
+                                        newRot.z * Math.PI / 180);
+        }
+        else if(newRot instanceof THREE.Euler) {
+            this.#object.rotation.set(newRot.x, newRot.y, newRot.z);
+        }
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectScaleX(newX) {
+        this.#object.scale.x = parseFloat(newX);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectScaleY(newY) {
+        this.#object.scale.y = parseFloat(newY);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectScaleZ(newZ) {
+        this.#object.scale.z = parseFloat(newZ);
+        this.#updateTransformDOMElements();
+    }
+
+    setObjectScale(newScale) {
+        if(newScale instanceof new THREE.Vector3)
+            this.#object.scale.copy(newScale);
+        this.#updateTransformDOMElements();
+    }
+
+    #updateTransformDOMElements() {
+        translateEntryX.value = this.#object.position.x;
+        translateEntryY.value = this.#object.position.y;
+        translateEntryZ.value = -this.#object.position.z;
+
+        rotateEntryX.value = (this.#object.rotation.x * 180 / Math.PI).toFixed(4);
+        rotateEntryY.value = (this.#object.rotation.y * 180 / Math.PI).toFixed(4);
+        rotateEntryZ.value = (this.#object.rotation.z * 180 / Math.PI).toFixed(4);
+
+        scaleEntryX.value = this.#object.scale.x;
+        scaleEntryY.value = this.#object.scale.y;
+        scaleEntryZ.value = this.#object.scale.z;
     }
 
     #setCameraLayers(camera) {

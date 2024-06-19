@@ -363,10 +363,10 @@ export class InputManager {
     }
 
     keyDown(keyEvent) {
-        const key = keyEvent.key;
+        const key = keyEvent.key.toLowerCase();
 
         switch(key){
-            case "Shift":
+            case "shift":
                 this.#probeScene.setGumballSnap(true);
                 break;
         }
@@ -383,9 +383,7 @@ export class InputManager {
         const scaleButton = document.getElementById("scaleButton");
 
         switch(key){
-            case "q":
-                this.#probeScene.resetObjectTransform();
-                break;
+            // Transform Shortcuts
             case "w":
                 this.#probeScene.setGumballMode("translate");
                 translateButton.className = "transform-button-clicked";
@@ -404,9 +402,19 @@ export class InputManager {
                 rotateButton.className = "transform-button";
                 scaleButton.className = "transform-button-clicked";
                 break;
-            case "Shift":
+            
+            case "shift":
                 this.#probeScene.setGumballSnap(false);
                 break;
+            
+            case "q":
+                if(this.#keyDownEvents[key].shiftKey)
+                    this.#probeScene.setObjectDefaultTransform();
+                else   
+                    this.#probeScene.resetObjectTransform();
+                break;
+
+            // Other Shortcuts   
             case "d":
                 this.#probeScene.activateFrustumTransition();
                 const button = document.getElementById("imageSwapButton");

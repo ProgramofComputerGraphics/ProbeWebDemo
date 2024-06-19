@@ -83,13 +83,38 @@
 					</div>
 					<div class="submenu" id="transformationControls">
 						<div class="submenu-item">
-							<div class="submenu-button-row">
-								<button class="transform-button" id="transformResetButton"> Reset (Q) </button>
-								<button class="transform-button-clicked" id="translateButton"> Translate (W) </button>
+							<div class="submenu-item-no-indent">
+								<button class="submenu-button" id="transformResetButton"> Reset to Default Transform (Q) </button>
 							</div>
-							<div class="submenu-button-row">
+							<div class="submenu-item-no-indent">
+								<button class="submenu-button" id="transformSetDefaultButton"> Set Current Transform As Default (Shift + Q) </button>
+							</div>
+							<div class="submenu-item-no-indent" id="translationControlsMenu">
+								<button class="transform-button-clicked" id="translateButton"> Translate (W) </button>
+								<label for="translationXEntry"> X: </label>
+								<input type="number" id="translationXEntry" value="0" title="Translation X Value" class="standard-number">
+								<label for="translationYEntry"> Y: </label>
+								<input type="number" id="translationYEntry" value="0" title="Translation Y Value" class="standard-number">
+								<label for="translationZEntry"> Z: </label>
+								<input type="number" id="translationZEntry" value="0" title="Translation Z Value" class="standard-number">
+							</div>
+							<div class="submenu-item-no-indent" id="rotationControlsMenu">
 								<button class="transform-button" id="rotateButton"> Rotate (E) </button>
+								<label for="rotationXEntry"> X: </label>
+								<input type="number" id="rotationXEntry" value="0" title="Rotation around X-Axis (Degrees)" class="standard-number">
+								<label for="rotationYEntry"> Y: </label>
+								<input type="number" id="rotationYEntry" value="0" title="Rotation around Y-Axis (Degrees)" class="standard-number">
+								<label for="rotationZEntry"> Z: </label>
+								<input type="number" id="rotationZEntry" value="0" title="Rotation around Z-Axis (Degrees)" class="standard-number">
+							</div>
+							<div class="submenu-item-no-indent" id="scaleControlsMenu">
 								<button class="transform-button" id="scaleButton"> Scale (R) </button>
+								<label for="scaleXEntry"> X: </label>
+								<input type="number" id="scaleXEntry" value="1" title="Scale X Value" class="standard-number">
+								<label for="scaleYEntry"> Y: </label>
+								<input type="number" id="scaleYEntry" value="1" title="Scale Y Value" class="standard-number">
+								<label for="scaleZEntry"> Z: </label>
+								<input type="number" id="scaleZEntry" value="1" title="Scale Z Value" class="standard-number">
 							</div>
 						</div>
 					</div>
@@ -202,7 +227,6 @@
 				"three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
 			  }
 			}
-		  </script>
 		</script>
 		<script type="module" src="./js/main.js"></script>
     </body>    

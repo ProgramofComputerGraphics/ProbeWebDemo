@@ -272,6 +272,50 @@ function initTransformWidgetButtons(probeScene, viewManager) {
     scaleButton.addEventListener("click", setGumballModeToScale);
 }
 
+function initTransformEntryElements(probeScene) {
+    const translateEntryX = document.getElementById("translationXEntry");
+    const translateEntryY = document.getElementById("translationYEntry");
+    const translateEntryZ = document.getElementById("translationZEntry");
+
+    translateEntryX.addEventListener("change", () => {
+        probeScene.setObjectPositionX(translateEntryX.value);
+    });
+    translateEntryY.addEventListener("change", () => {
+        probeScene.setObjectPositionY(translateEntryY.value);
+    });
+    translateEntryZ.addEventListener("change", () => {
+        probeScene.setObjectPositionZ(-parseFloat(translateEntryZ.value));
+    });
+
+    const rotateEntryX = document.getElementById("rotationXEntry");
+    const rotateEntryY = document.getElementById("rotationYEntry");
+    const rotateEntryZ = document.getElementById("rotationZEntry");
+
+    rotateEntryX.addEventListener("change", () => {
+        probeScene.setObjectRotationX(rotateEntryX.value);
+    });
+    rotateEntryY.addEventListener("change", () => {
+        probeScene.setObjectRotationY(rotateEntryY.value);
+    });
+    rotateEntryZ.addEventListener("change", () => {
+        probeScene.setObjectRotationZ(rotateEntryZ.value);
+    });
+
+    const scaleEntryX = document.getElementById("scaleXEntry");
+    const scaleEntryY = document.getElementById("scaleYEntry");
+    const scaleEntryZ = document.getElementById("scaleZEntry");
+
+    scaleEntryX.addEventListener("change", () => {
+        probeScene.setObjectScaleX(scaleEntryX.value);
+    });
+    scaleEntryY.addEventListener("change", () => {
+        probeScene.setObjectScaleY(scaleEntryY.value);
+    });
+    scaleEntryZ.addEventListener("change", () => {
+        probeScene.setObjectScaleZ(scaleEntryZ.value);
+    });
+}
+
 
 // Shading Functions
 
@@ -418,6 +462,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     // Transform Controls
     initTransformResetButton(probeScene);
     initTransformWidgetButtons(probeScene, viewManager);
+    initTransformEntryElements(probeScene);
 
     // Shading Controls
     initShadingModeDropdown(probeScene);
