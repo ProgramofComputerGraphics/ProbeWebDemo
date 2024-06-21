@@ -7,11 +7,6 @@ const unitY = new THREE.Vector3(0,1,0);
 
 console.log("Root Path:", window.location.pathname);
 
-var fs = require('fs');
-var files = fs.readdirSync(window.location.pathname);
-
-console.log("Files:", files);
-
 const fragmentShader = loadLocalFile("./shaders/axisFragmentShader.fs");
 
 export class AxesObject {
