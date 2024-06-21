@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
@@ -14,7 +15,8 @@ import { deepCopyMeshOrLine,
 
 const defaultGeo = new THREE.BoxGeometry(1,1,1);
 
-const loader = new OBJLoader();
+const objLoader = new OBJLoader();
+const gltfLoader = new GLTFLoader();
 const exporter = new OBJExporter();
 
 const raycaster = new THREE.Raycaster();
@@ -108,7 +110,7 @@ export class ProbeScene {
             this.#objMaterial = this.#standardMaterial;
         }
 
-        this.#objectGeneratedWireframe = null;
+        this.#objectGeneratedWireframe = false;
         this.#useObjectGeneratedWireframe = false;
 
         this.#frustum = new Frustum();
@@ -164,10 +166,10 @@ export class ProbeScene {
 
     #changeSceneObject(newObject) {
         if(this.#object != null) {
-            for(let i = 0; i < this.#object.children.length; ++i){
-                if(this.#object.children[i].geometry)
-                    this.#object.children[i].geometry.dispose();
-            }
+            this.#object.traverse((descendant) => {
+                if(descendant.geometry)
+                    descendant.geometry.dispose();
+            });
             this.#object.clear();
             this.#realScene.remove(this.#object);
             if(this.#object.geometry)
@@ -178,7 +180,7 @@ export class ProbeScene {
         this.#realScene.add(this.#object);
         this.#object.userData.clickable = true;
 
-        this.#objectGeneratedWireframe = null;
+        this.#objectGeneratedWireframe = false;
 
         if(this.#gumball){
             this.clearGumball();
@@ -186,9 +188,12 @@ export class ProbeScene {
     }
 
     setObjectToDefaultCube() {
-        this.#changeSceneObject(new THREE.Mesh(defaultGeo, this.#objMaterial));
+        const defaultCubeObject = new THREE.Object3D();
+        defaultCubeObject.add(new THREE.Mesh(defaultGeo, this.#objMaterial));
+        this.#changeSceneObject(defaultCubeObject);
         this.#object.name = "DefaultCube";
         this.#object.layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
+        this.#object.children[0].layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
     
         // Set default object tranformation for default cube
         const near = this.#frustum.getNear();
@@ -211,7 +216,7 @@ export class ProbeScene {
     
         // Change materials on loaded object to the scene material
         const mat = this.#objMaterial;
-        this.#object.children.forEach(function(mesh) {
+        this.#object.traverse(function(mesh) {
             try {
                 mesh.layers.set(ProbeScene.STANDARD_OBJECT_LAYER);
                 mesh.material = mat;
@@ -288,16 +293,63 @@ export class ProbeScene {
         return object;
     }
 
-    loadObjectFromText(objectText) {
+    loadObjectFromOBJText(objText) {
         // Immediately fail for malformed paths
-        if(objectText == null || objectText == "")
+        if(objText == null || objText == "")
         {  
             console.log("Object Loading Failed: Null or Empty Text Provided!");
             return;
         }
 
-        const object = loader.parse(objectText);
+        const object = objLoader.parse(objText);
         this.#addLoadedObjectToScene(object);
+    }
+    
+    // Modified from the answer to the following StackOverflow post:
+    // https://stackoverflow.com/questions/67864724/threejs-load-gltf-model-directly-from-file-input
+    loadObjectFromOBJFile(objFile, loadCompleteCallback) {
+        // Immediately fail for malformed paths
+        const url = URL.createObjectURL(objFile);
+        objLoader.load(url, 
+            (obj) => {        
+                this.#addLoadedObjectToScene(obj);
+                if(loadCompleteCallback)
+                    loadCompleteCallback();
+                URL.revokeObjectURL(url);
+            }, 
+            () => {}, 
+            () => { 
+                URL.revokeObjectURL(url);
+            }
+        );
+    }
+
+    // Modified from the answer to the following StackOverflow post:
+    // https://stackoverflow.com/questions/67864724/threejs-load-gltf-model-directly-from-file-input
+    loadObjectFromGLTFFile(gltfFile, loadCompleteCallback) {
+        const url = URL.createObjectURL(gltfFile);
+        gltfLoader.load(url, 
+            (gltf) => {        
+                const object = gltf.scene;
+                console.log(object.children[0].children);
+                object.traverse((descendant) => {
+                    if(descendant instanceof THREE.Camera ||
+                        descendant instanceof THREE.Light
+                    ) {
+                        descendant.parent.remove(descendant);
+                    }
+                });
+                // console.log("Loaded Object:", object);
+                this.#addLoadedObjectToScene(object);
+                if(loadCompleteCallback)
+                    loadCompleteCallback();
+                URL.revokeObjectURL(url);
+            }, 
+            () => {}, 
+            () => { 
+                URL.revokeObjectURL(url);
+            }
+        );
     }
 
     setFitLoadedObjectToFrustum(fitToFrustum) {
@@ -396,9 +448,9 @@ export class ProbeScene {
         }
 
         const mat = this.#objMaterial;
-        this.#object.children.forEach(function(mesh) {
+        this.#object.traverse(function(mesh) {
             try {
-                if(!(mesh instanceof THREE.Line))
+                if(mesh instanceof THREE.Mesh)
                     mesh.material = mat;
             }
             catch(error) {
@@ -409,28 +461,42 @@ export class ProbeScene {
     }
 
     isDetriangulatedWireframeGenerated() {
-        return this.#objectGeneratedWireframe != null;
+        return this.#objectGeneratedWireframe;
     }
 
     generateObjectDetriangulatedWireframe() {        
         return new Promise((resolve, reject) => {
             try {
-                if (this.#objectGeneratedWireframe != null) {
-                    this.#objectGeneratedWireframe.geometry.dispose();
-                    this.#object.remove(this.#objectGeneratedWireframe);
+                if (this.#objectGeneratedWireframe) {
+                    this.#object.traverse((descendant) => {
+                        if(descendant instanceof THREE.LineSegments && 
+                            descendant.name.startsWith("DetriangulatedWireframe"))
+                        {
+                            wireframe.geometry.dispose();
+                            descendant.parent.remove(wireframe);
+                        }
+                    });
                 }
     
-                // TODO - Handle more cases (this is a quick fix since the OBJ loader
-                // always loads in as a group with one mesh, and the default cube is
-                // just a mesh)
-                const mesh = (this.#object instanceof THREE.Mesh ? this.#object : this.#object.children[0]);
-                this.#objectGeneratedWireframe = generateDetriangulatedWireframe(mesh, 
-                                                            this.#objectGeneratedWireframeMaterial,
-                                                            true);
+                this.#object.traverse((descendant) => {
+                    if(descendant instanceof THREE.Mesh) {
+                        const wireframe = generateDetriangulatedWireframe(descendant, 
+                                            this.#objectGeneratedWireframeMaterial,
+                                            true);
+                        
+                        wireframe.layers.set(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
+                        wireframe.name = "DetriangulatedWireframe_" + descendant.name;
+                        descendant.parent.add(wireframe);
+                    }
+                    else {
+                        console.log("Non-mesh element encountered; " +
+                                    "cannot generate detriangulated wireframe.");
+                    }
+                });
     
-                this.#objectGeneratedWireframe.layers.set(ProbeScene.DETRIANGULATED_WIREFRAME_LAYER);
-                this.#objectGeneratedWireframe.name = "DetriangulatedWireframe";
-                this.#object.add(this.#objectGeneratedWireframe);
+                this.#objectGeneratedWireframe = true;
+
+                console.log(this.#object);
     
                 document.getElementById("detriangulateWireframeButton").disabled = true;
                 this.setUseDetriangulatedWireframe(true);
@@ -810,7 +876,7 @@ export class ProbeScene {
         }
 
         if(this.#objShadingMode == "wire" && 
-            this.#objectGeneratedWireframe != null && 
+            this.#objectGeneratedWireframe && 
             this.#useObjectGeneratedWireframe)
         {
             camera.layers.disable(ProbeScene.STANDARD_OBJECT_LAYER);

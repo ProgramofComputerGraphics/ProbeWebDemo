@@ -178,7 +178,7 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
         firstFaceNormal.normalize();
 
         // Set threshold for "nearly equal" normals
-        const epsilon = 0.0001;
+        const epsilon = 0.000001;
         const normalDotThreshold = 1 - epsilon;
 
         // Iterate through the remaining faces checking for nearly equal normals

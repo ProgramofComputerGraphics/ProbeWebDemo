@@ -38,11 +38,21 @@ function initLoadObjectFileEntry(probeScene) {
         if (file && file != lastFile) {
             lastFile = file;
 
-            // Set up a Promise to handle the file read process
-            fileText = await readFile(file);
+            if(file.name.endsWith(".obj")) {
+                probeScene.loadObjectFromOBJFile(file);
+            }
+            else if(file.name.endsWith(".glb") || 
+                    file.name.endsWith(".gltf")) {
 
-            // Call the probeScene's loadObjectFromText method with the file content
-            probeScene.loadObjectFromText(fileText);
+                probeScene.loadObjectFromGLTFFile(file);
+            }
+            else {
+                console.log("Could not load " + file.name + ", accepted formats are:\n"
+                            + "\t-GLB\n"
+                            + "\t-GLTF\n"
+                            + "\t-OBJ");
+                return;
+            }
 
             deTriButton.disabled = false;
             deTriCheckboxMenu.className = "hidden";
