@@ -92,8 +92,8 @@ export class ProbeScene {
             clipping : true,
             side : defaults.startMaterialDoubleSided ? 
                         THREE.DoubleSide : THREE.FrontSide,
-            vertexShader : loadLocalFile("shaders/normalVertexShader.vs"),
-            fragmentShader : loadLocalFile("/shaders/normalFragmentShader.fs")
+            vertexShader : loadLocalFile("../shaders/normalVertexShader.vs"),
+            fragmentShader : loadLocalFile("../shaders/normalFragmentShader.fs")
         });
 
         this.#objectGeneratedWireframeMaterial = new THREE.LineBasicMaterial({
