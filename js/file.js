@@ -6,6 +6,7 @@ export function loadLocalFile(filePath){
         return xhr.responseText;
     } 
     else {
+        console.log("Request Status:", xhr.statusText);
         throw new Error("Failed to load file: " + filePath);
     }
 }
