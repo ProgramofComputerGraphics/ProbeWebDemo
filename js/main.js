@@ -15,8 +15,7 @@ let viewManager;
 let inputManager;
 
 function init() {
-	console.log("Root Path:", window.location.pathname);
-
+	
 	probeScene = new ProbeScene();
 	
 	viewManager = new ViewManager();

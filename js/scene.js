@@ -21,6 +21,7 @@ const raycaster = new THREE.Raycaster();
 raycaster.params.Line.threshold = 0.1;
 
 let tempTest = null;
+console.log("Root Path:", window.location.pathname);
 
 const translateEntryX = document.getElementById("translationXEntry");
 const translateEntryY = document.getElementById("translationYEntry");
@@ -92,8 +93,8 @@ export class ProbeScene {
             clipping : true,
             side : defaults.startMaterialDoubleSided ? 
                         THREE.DoubleSide : THREE.FrontSide,
-            vertexShader : loadLocalFile("../shaders/normalVertexShader.vs"),
-            fragmentShader : loadLocalFile("../shaders/normalFragmentShader.fs")
+            vertexShader : loadLocalFile("./shaders/normalVertexShader.vs"),
+            fragmentShader : loadLocalFile("./shaders/normalFragmentShader.fs")
         });
 
         this.#objectGeneratedWireframeMaterial = new THREE.LineBasicMaterial({
