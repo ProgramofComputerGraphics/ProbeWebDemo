@@ -368,8 +368,6 @@ function initDetriangulateWireframeButton(probeScene) {
     const deTriButton = document.getElementById("detriangulateWireframeButton");
     const deTriCheckboxMenu = document.getElementById("useDetriangulatedWireframeMenu");
 
-    console.log("Button Pressed!");
-
     deTriButton.addEventListener("click", () => {
         document.getElementById('loadingPopup').className = "loading-popup";
 
@@ -491,6 +489,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
         const button = document.getElementById(viewName + "Button");
         if(activeView != -1) {
             button.textContent = "Fullscreen";
+            button.title = "Click to make this view fullscreen";
             viewManager.setActiveView(-1);
         }
         else {
@@ -499,6 +498,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
             }
             else {
                 button.textContent = "Back to Four Views";
+                button.title = "Click to return to all four views";
             }
         }
     }
@@ -522,7 +522,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     //     }
     // }
     
-    window.onOrthoSwapElevationPlanButtonPressed = function(viewName, buttonID) {
+    window.onOrthoSwapButtonPressed = function(viewName, buttonID) {
         const view = viewManager.getViewByName(viewName);
     
         viewManager.swapViewIfOrtho(view, probeScene.getFarPlane());
@@ -532,11 +532,11 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
     
         if(mode == "elevation") {
             button.textContent = "Elevation";
-            button.title = "Click to Swap to Plan"
+            button.title = "Click to swap to a plan view"
         }
         else if(mode == "plan") {
             button.textContent = "Plan";
-            button.title = "Click to Swap to Elevation";
+            button.title = "Click to swap to an elevation view";
         }
         else {
             console.error("Error: Non-Ortho View Accessed by Ortho Swap Button");
@@ -547,11 +547,13 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
         probeScene.activateFrustumTransition();
         const button = document.getElementById("imageSwapButton");
 
-        if(button.textContent == "Click to Undistort (D)") {
-            button.textContent = "Click to Distort (D)";
+        if(button.textContent == "Undistort (D)") {
+            button.textContent = "Distort (D)";
+            button.title = "Click to distort the scene";
         }
-        else if(button.textContent == "Click to Distort (D)") {
-            button.textContent = "Click to Undistort (D)";
+        else if(button.textContent == "Distort (D)") {
+            button.textContent = "Undistort (D)";
+            button.title = "Click to undistort the scene";
         }
     }
 }

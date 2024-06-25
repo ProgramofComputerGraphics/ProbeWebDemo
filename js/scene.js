@@ -331,7 +331,6 @@ export class ProbeScene {
         gltfLoader.load(url, 
             (gltf) => {        
                 const object = gltf.scene;
-                console.log(object.children[0].children);
                 object.traverse((descendant) => {
                     if(descendant instanceof THREE.Camera ||
                         descendant instanceof THREE.Light
@@ -339,7 +338,6 @@ export class ProbeScene {
                         descendant.parent.remove(descendant);
                     }
                 });
-                // console.log("Loaded Object:", object);
                 this.#addLoadedObjectToScene(object);
                 if(loadCompleteCallback)
                     loadCompleteCallback();
@@ -495,8 +493,6 @@ export class ProbeScene {
                 });
     
                 this.#objectGeneratedWireframe = true;
-
-                console.log(this.#object);
     
                 document.getElementById("detriangulateWireframeButton").disabled = true;
                 this.setUseDetriangulatedWireframe(true);

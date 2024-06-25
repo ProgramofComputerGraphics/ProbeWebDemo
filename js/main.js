@@ -1,7 +1,7 @@
 import { initControls } from './controls.js';
 import { setTestBoolean, testBoolean } from './debugging.js';
 import { InputManager } from './input.js';
-import { ProbeScene } from './scene.js'
+import { ProbeScene } from './scene.js';
 import { ViewManager } from './views.js';
 
 

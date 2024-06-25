@@ -418,11 +418,13 @@ export class InputManager {
             case "d":
                 this.#probeScene.activateFrustumTransition();
                 const button = document.getElementById("imageSwapButton");
-                if(button.textContent == "Click to Undistort (D)") {
-                    button.textContent = "Click to Distort (D)";
+                if(button.textContent == "Undistort (D)") {
+                    button.textContent = "Distort (D)";
+                    button.title = "Click to distort the scene";
                 }
-                else if(button.textContent == "Click to Distort (D)") {
-                    button.textContent = "Click to Undistort (D)";
+                else if(button.textContent == "Distort (D)") {
+                    button.textContent = "Undistort (D)";
+                    button.title = "Click to undistort the scene";
                 }
                 break;
             case "c":

@@ -9,7 +9,7 @@
         <div id="title" class="title">
 			Probe Web Demo
 		</div>
-		<div class="container">
+		<div class="container" id="container">
 			<div class="controls-section" id="controlsSection">
 				<div class="menu-label" id="controlsLabel">
 					Controls
@@ -167,15 +167,19 @@
 							<input type="range" id="nearFarPlaneOpacitySlider" min="0" max="1" step="0.01" value="0.2" class="standard-slider">
 						</div>
 					</div>
+
+					<br>
+					<br>
+
 				</div>
 			</div>
 			<div class="render-section" id="renderSection">
 				<div class="overall-views-container" id="viewsContainer">
 					<!-- Real World View Elements -->
 					<div class="individual-view-container" id="realViewContainer">	
-						<div class="view-header"> 
+						<div class="view-header" id="realViewHeader"> 
 							<label class="header-label"> Real View </label>
-							<button class="header_button" id="realViewButton" onclick="onFullscreenButtonPressed('realView')"> Fullscreen </button>
+							<button class="header-button" id="realViewButton" onclick="onFullscreenButtonPressed('realView')" title="Click to make this view fullscreen"> Fullscreen </button>
 						</div>
 						<div class="view-render-area" id="realView"></div>
 					</div>
@@ -183,20 +187,20 @@
 					<!-- Camera View Elements -->
 					<div class="individual-view-container" id="cameraViewContainer">	
 						<div class="view-header"> 
-							<label class="header-label"> Camera View </label>
-							<button class="header_button" id="cameraViewButton" onclick="onFullscreenButtonPressed('cameraView')"> Fullscreen </button>
+							<label class="header-label"  id="cameraViewHeader"> Camera View </label>
+							<button class="header-button" id="cameraViewButton" onclick="onFullscreenButtonPressed('cameraView')" title="Click to make this view fullscreen"> Fullscreen </button>
 						</div>
 						<div class="view-render-area" id="cameraView"></div>
 					</div>
 	
 					<!-- Orthographic View Elements -->
 					<div class="individual-view-container" id="orthoViewContainer">	
-						<div class="view-header">
+						<div class="view-header"  id="orthoViewHeader">
 							<label class="header-label"> Orthographic View </label>
-							<div style="height:100%">
+							<div class="header-button-section">
 								<!-- <button class="header_button" id="orthoSwapRealImageButton" onclick="onOrthoSwapRealImageButtonPressed('orthoView', 'orthoSwapRealImageButton')" style="height:100%" title="Click to Sync with Imagespace View"> Real View </button> -->
-								<button class="header_button" id="orthoSwapElevationPlanButton" onclick="onOrthoSwapElevationPlanButtonPressed('orthoView', 'orthoSwapElevationPlanButton')" style="height:100%" title="Click to Swap to Plan"> Elevation </button>
-								<button class="header_button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')" style="height:100%"> Fullscreen </button>
+								<button class="header-button" id="orthoSwapButton" onclick="onOrthoSwapButtonPressed('orthoView', 'orthoSwapButton')" style="height:100%" title="Click to swap to a plan view"> Elevation </button>
+								<button class="header-button" id="orthoViewButton" onclick="onFullscreenButtonPressed('orthoView')" style="height:100%" title="Click to make this view fullscreen"> Fullscreen </button>
 							</div>
 						</div>
 						<div class="view-render-area" id="orthoView"></div>
@@ -204,11 +208,11 @@
 	
 					<!-- Imagespace View Element -->
 					<div class="individual-view-container" id="imageViewContainer">	
-						<div class="view-header"> 
+						<div class="view-header"  id="imageViewHeader"> 
 							<label class="header-label"> Imagespace View </label>
-							<div style="height:100%">
-								<button class="header_button" id="imageSwapButton" onclick="onImageSwapButtonPressed()" style="height:100%">Click to Undistort (D)</button>
-								<button class="header_button" id="imageViewButton" onclick="onFullscreenButtonPressed('imageView')" style="height:100%"> Fullscreen </button>
+							<div class="header-button-section">
+								<button class="header-button" id="imageSwapButton" onclick="onImageSwapButtonPressed()" style="height:100%" title="Click to undistort the scene">Undistort (D)</button>
+								<button class="header-button" id="imageViewButton" onclick="onFullscreenButtonPressed('imageView')" style="height:100%" title="Click to make this view fullscreen"> Fullscreen </button>
 							</div>
 						</div>
 						<div class="view-render-area" id="imageView"></div>

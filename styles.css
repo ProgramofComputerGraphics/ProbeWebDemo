@@ -1,6 +1,8 @@
 body {
-	margin: 10px;
+	margin: 5px;
     background-color: rgb(0, 0, 0);
+    height: calc(100vh - 10px);
+    overflow: hidden;
 }
 
 .title
@@ -10,8 +12,9 @@ body {
     font-weight: bold;
     font-family: "Lucida Console", "Courier New", monospace; 
     text-align: center;
+    height: 80px;
     padding-top: 10px;
-    padding-bottom: 50px;
+    padding-bottom: 10px;
 }
 
 .container
@@ -19,11 +22,16 @@ body {
     display: flex;
     flex-direction: row; /* Lay out children horizontally */
     align-items: flex-start; /* Align children to the top */
-    overflow-x: hidden; /* Hide horizontal overflow */
+    overflow: hidden; /* Hide horizontal overflow */
     background-color: black; 
-    width: 100%;
+    width: calc(calc(100%) - mod(calc(100%), 2px)); /* The mod() term is used to ensure even width */
+    height: calc(calc(100% - 100px - 20px) - mod(calc(100% - 100px - 20px), 2px));
     max-height: 100%;
+    margin-top: 0px;
+    margin-bottom: 20px;
 }
+
+/* Controls Section */
 
 .controls-section {
     flex: 0 0 auto; /* Controls take up as much space as they need */
@@ -32,82 +40,11 @@ body {
     padding-right: 20px;
     white-space: nowrap; /* Prevent text from wrapping */
     background-color: rgb(46, 46, 46);
-    min-width: 15%;
-    height: 90vh;
-    max-height: 100%;
+    width: 440px;
+    height: calc(100% - 40px);
+    padding-bottom: 40px;
+    max-height: calc(100% - 40px);
   }
-
-.render-section {
-    flex: 1 1 auto; /* Remaining space is devoted to the WebGL element */
-    position: relative;
-    justify-content: center; /* Center the canvas horizontally */
-    align-items: center; /* Center the canvas vertically */
-    background-color: rgb(0, 0, 0); /* Just for visibility */
-    padding-left: 40px; 
-    min-width: 0;
-    height: 90vh; /* Occupy full viewport height */
-}
-
-.overall-views-container {
-    display: grid; /* Remaining space is devoted to the WebGL element */
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 10px; /* Adjust the gap between the grid items as needed */
-    justify-content: center; /* Center the canvas horizontally */
-    align-items: center; /* Center the canvas vertically */
-    background-color: rgb(0, 0, 0); /* Just for visibility */
-    min-width: 0;
-    height: 90vh; /* Occupy full viewport height */
-}
-
-.individual-view-container {
-    background-color: rgb(0, 0, 0); /* Just for visibility */
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.view-header{
-    flex: 0 0 auto;
-    display: flex;
-    padding: 10px;
-    background-color: rgb(0, 0, 0);
-    justify-content: space-between;
-}
-
-.header-label{
-    font-weight: bold;
-    font-family: "Lucida Console", "Courier New", monospace; 
-    font-size: 24px;
-    color:rgb(192, 192, 192);
-    text-align: center;
-}
-
-.header-button {
-    margin-left: auto;
-}
-
-.view-render-area{
-    flex: 1 1 auto;
-    border: solid 2px rgb(255, 255, 255);
-    align-content: center;
-    align-items: center;
-}
-
-.render-canvas {
-    width: 100%; /* Fill the width of the parent */
-    height: 100%; /* Fill the height of the parent */
-}
-
-/* Common Demo UI Elements */
-.menu
-{ 
-    color:rgb(255, 255, 255);
-    text-align: "left";
-    padding-top: 10px;
-}
 
 .menu-label
 { 
@@ -118,7 +55,17 @@ body {
     font-size: 36px;
     font-weight: bold;
     font-family: "Lucida Console", "Courier New", monospace; 
+    height: 36px;
     width: 100%;
+}
+
+.menu
+{ 
+    color:rgb(255, 255, 255);
+    text-align: "left";
+    height: calc(100% - 36px);
+    max-height: calc(100% - 36px);
+    overflow-y: auto;
 }
 
 .submenu
@@ -187,13 +134,113 @@ body {
     margin-bottom: 5px;
 }
 
-.shadertext
-{
-   width: 95%;
-   height: 100%;
-   min-height: 200px;
-   font-size: 32px;
+/* Render Section */
+
+.render-section {
+    flex: 1 1 auto; /* Remaining space is devoted to the WebGL element */
+    position: relative;
+    justify-content: center; /* Center the canvas horizontally */
+    align-items: center; /* Center the canvas vertically */
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    padding-left: 40px;
+    min-height: 100%;
+    height: 100%; 
+    max-height: 100%;
+    min-width: 0;
 }
+
+.overall-views-container {
+    display: grid; /* Remaining space is devoted to the WebGL element */
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px; /* Adjust the gap between the grid items as needed */
+    justify-content: center; /* Center the canvas horizontally */
+    align-items: center; /* Center the canvas vertically */
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    min-width: 0;
+    min-height: 100%;
+    height: 100%;
+    max-height: 100%;
+}
+
+.individual-view-container {
+    background-color: rgb(0, 0, 0); /* Just for visibility */
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: calc(100% - 5px);
+    max-width: calc(100% - 5px);
+    min-height: 0;
+    height: calc(100% - 5px);
+    max-height: calc(100% - 5px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.view-header{
+    flex: 0 0 auto;
+    display: flex;
+    padding: 10px;
+    background-color: rgb(0, 0, 0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-content: space-between;
+}
+
+.header-label{
+    font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace; 
+    font-size: 24px;
+    height: 24px;
+    max-height: 24px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    color:rgb(192, 192, 192);
+    text-align: center;
+}
+
+.header-button-section {
+    display: flex;
+    margin-left: auto;
+    height: 24px;
+    max-height: 24px;
+    overflow: hidden;
+}
+
+.header-button {
+    margin-left: 5px;
+    height: 24px;
+    max-height: 24px;
+}
+
+/* @media (max-width: 1520px) {
+    .header-button::after {
+        content: '...';
+    }
+
+    .header-button {
+        font-size: 0; /* Hide text */ /*
+        min-width: 50px;
+    }
+} */
+
+.view-render-area{
+    flex: 1 1 auto;
+    border: solid 2px rgb(255, 255, 255);
+    align-content: center;
+    align-items: center;
+    height: calc(100% - 20px - 24px - 5px);
+    max-height: calc(100% - 20px - 24px - 5px);
+}
+
+.render-canvas {
+    width: 100%; /* Fill the width of the parent */
+    height: 100%; /* Fill the height of the parent */
+}
+
+/* Common Demo UI Elements */
+
 
 .loading-popup {
     position: fixed;

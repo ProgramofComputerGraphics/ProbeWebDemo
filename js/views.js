@@ -105,8 +105,6 @@ export class ViewManager {
             this.#initCameraControls(view);
         }
 
-        console.log(this.#views);
-
         // Initialize the scene for camera outlines
         this.#cameraOutlineScene = new THREE.Scene();
 
@@ -230,7 +228,7 @@ export class ViewManager {
                 // Set all views to a small, equal size - this ensures they all
                 // grow to fill the screen correctly on the next call to
                 // updateViewSizes()
-                this.#views[i].renderer.setSize(1,1);
+                //this.#views[i].renderer.setSize(1,1);
 
                 // Set all views to display their contents
                 const container = document.getElementById(this.#views[i].containerID);
@@ -434,7 +432,7 @@ export class ViewManager {
         const canvasWidth = viewContainer.clientWidth;
         const canvasHeight = viewContainer.clientHeight;
 
-        renderer.setSize(viewContainer.clientWidth, viewContainer.clientHeight);
+        renderer.setSize(viewContainer.clientWidth, viewContainer.clientHeight, false);
 
         let viewWidth, viewHeight;
 

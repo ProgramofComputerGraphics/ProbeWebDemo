@@ -136,21 +136,6 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
     if(verbose)
         console.log(totalEdges + " Unique Edges Found!\nRemoving \'Interior Edges\'...");
 
-    // console.log(obj);
-    // console.log("Vertices:", vertexList);
-    // console.log("Indices:", indices);
-    // console.log("Index Map:", indexMap);
-    // console.log("Loop Iterations:", loopIters);
-    // console.log("Faces:", faceList);
-    // console.log("Edges:");
-    // for(let i = 0; i < edgeList.length; ++i){
-    //     console.log("\t", edgeList[i]);
-    // }
-    // console.log("Edge Face Map:", edgeFaceMap);
-    // for(let i = 0; i < edgeFaceMap.length; ++i){
-    //     console.log("\t", edgeFaceMap[i]);
-    // }
-
     // Eliminate all edges with faces that have "nearly equal" normals
     let j = 0;
     while(j < edgeFaceMap.length) {
@@ -199,9 +184,6 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
             const currentFaceNormal = new THREE.Vector3().crossVectors(currentFaceV1V2, currentFaceV1V3);
             currentFaceNormal.normalize();
 
-            // console.log("First Normal:", firstFaceNormal);
-            // console.log("Second Normal:", currentFaceNormal);
-
             if(currentFaceNormal.dot(firstFaceNormal) < -0.99 && verbose) {
                 console.log("Flipped Normal Found!");
             }
@@ -215,11 +197,9 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
         }
 
         if(keepEdge){
-            //console.log("Edge Kept!");
             ++j;
         }
         else {
-            //console.log("Edge Removed!");
             edgeList.splice(j,1);
             edgeFaceMap.splice(j,1);
         }
@@ -229,7 +209,6 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
         console.log((totalEdges - edgeList.length) + " Edges Removed; " 
                     + edgeList.length + " Edges Retained!\n"
                     + "Generating Line Segment Geometry...");
-    // console.log("BackupCounter:", backupCounter);
 
     // Generate LineSegments object
     const linePoints = [];
@@ -240,8 +219,6 @@ export function generateDetriangulatedWireframe(obj, lineMat, verbose) {
         linePoints.push(vertexList[edge[0]]);
         linePoints.push(vertexList[edge[1]]);
     }
-    
-    //console.log("Line Points:", linePoints)
 
     const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
 
