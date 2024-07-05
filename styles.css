@@ -170,7 +170,7 @@ body {
     min-width: 0;
     width: calc(100% - 5px);
     max-width: calc(100% - 5px);
-    min-height: 0;
+    min-height: max(calc(100% - 5px), 0);
     height: calc(100% - 5px);
     max-height: calc(100% - 5px);
     overflow: hidden;

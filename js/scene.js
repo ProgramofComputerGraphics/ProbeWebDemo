@@ -891,9 +891,16 @@ export class ProbeScene {
             if(descendant instanceof THREE.Mesh || 
                 descendant instanceof THREE.Line)
             {
-                const childCopy = deepCopyMeshOrLine(descendant, true);
+                let childCopy = deepCopyMeshOrLine(descendant, true);
                 
-                this.#frustum.applyFrustumDistortionToObject(childCopy);
+                try {
+                    this.#frustum.applyFrustumDistortionToObject(childCopy);
+                }
+                catch (error) {
+                    console.log("Error Occurred when Distorting Object!\n", error);
+                    childCopy = new THREE.Object3D();
+                    childCopy.name = descendant.name;
+                }
 
                 childCopy.position.set(0,0,0);
                 childCopy.name += "_Distorted";
@@ -969,8 +976,14 @@ export class ProbeScene {
 
             renderer.clippingPlanes = this.#frustum.generateFrustumClippingPlanes();
 
-            renderer.render(this.#imageSpaceScene, camera);
-    
+            // Grimy try-catch used to avoid scenarios where rendering causes crashes
+            try{
+                renderer.render(this.#imageSpaceScene, camera);
+            }
+            catch(error){
+                console.error(error);
+            }
+
             // Reset visibility in case it was hidden for transition
             this.#imageSpaceSceneAxes.setVisible(imageAxesVisible);
 

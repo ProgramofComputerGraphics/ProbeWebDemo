@@ -819,7 +819,7 @@ export class Frustum {
             obj.geometry.attributes.normal.needsUpdate = true;
 
         try {
-            obj.geometry.computeBoundingSphere();   
+            obj.geometry.computeBoundingSphere();
         }
         catch(error) {
             console.error(error);
@@ -840,9 +840,13 @@ export class Frustum {
     #addDistortedLineGroup(distortedFrustum, lineGroup) {
         for(let i = 0; i < lineGroup.children.length; ++i) {
             const line = lineGroup.children[i];
-            const distortedLine = deepCopyMeshOrLine(line);
-            this.applyFrustumDistortionToObject(distortedLine);
-
+            let distortedLine = deepCopyMeshOrLine(line);
+            try{
+                this.applyFrustumDistortionToObject(distortedLine);
+            }
+            catch(error){
+                distortedLine = new THREE.Object3D();
+            }
             distortedFrustum.add(distortedLine);
         }
     }
@@ -867,15 +871,28 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#perspectiveFarPlaneLines);
 
-            const distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
-            this.applyFrustumDistortionToObject(distortedNearPlane, true);
+            let distortedNearPlane = deepCopyMeshOrLine(this.#perspectiveNearPlaneSurface);
+            try{
+                this.applyFrustumDistortionToObject(distortedNearPlane);
+            }
+            catch(error){
+                console.log("Error Occurred when Distorting Near Plane!\n", error);
+                distortedNearPlane = new THREE.Object3D();
+            }
 
             distortedNearPlane.position.set(0,0,0);
 
             distortedFrustum.add(distortedNearPlane);
 
-            const distortedFarPlane = deepCopyMeshOrLine(this.#perspectiveFarPlaneSurface);
-            this.applyFrustumDistortionToObject(distortedFarPlane);
+            let distortedFarPlane = deepCopyMeshOrLine(this.#perspectiveFarPlaneSurface);
+            try{
+                this.applyFrustumDistortionToObject(distortedFarPlane);
+            }
+            catch(error){
+                console.log("Error Occurred when Distorting Far Plane!\n", error);
+                distortedFarPlane = new THREE.Object3D();
+            }
+            
 
             distortedFarPlane.position.set(0,0,0);
 
@@ -890,8 +907,14 @@ export class Frustum {
             this.#addDistortedLineGroup(distortedFrustum, 
                                         this.#orthoNearPlaneLines);
 
-            const distortedNearPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
-            this.applyFrustumDistortionToObject(distortedNearPlane);
+            let distortedNearPlane = deepCopyMeshOrLine(this.#orthoNearPlaneSurface);
+            try{
+                this.applyFrustumDistortionToObject(distortedNearPlane);
+            }
+            catch(error){
+                console.log("Error Occurred when Distorting Near Plane!\n", error);
+                distortedNearPlane = new THREE.Object3D();
+            }
 
             distortedNearPlane.position.set(0,0,0);
 
@@ -902,8 +925,14 @@ export class Frustum {
                                         this.#orthoFarPlaneLines);
 
 
-            const distortedFarPlane = deepCopyMeshOrLine(this.#orthoFarPlaneSurface);
-            this.applyFrustumDistortionToObject(distortedFarPlane);
+            let distortedFarPlane = deepCopyMeshOrLine(this.#orthoFarPlaneSurface);
+            try{
+                this.applyFrustumDistortionToObject(distortedFarPlane);
+            }
+            catch(error){
+                console.log("Error Occurred when Distorting Far Plane!\n", error);
+                distortedFarPlane = new THREE.Object3D();
+            }
 
             distortedFarPlane.position.set(0,0,0);
 
