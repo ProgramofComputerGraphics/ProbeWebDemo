@@ -195,7 +195,7 @@ The following is a list of key inputs and their functionality in the web app:
 
 The default settings for the web application are slightly different than the settings recommended for demonstration purposes, as we anticipated potential use of the software for a "distorted geometry project." Thus, if using this software for a class demonstration, we recommend the following steps for set up:
 
-1) Load the webpage. Refresh the page if the application does not show the geometry.
+1) Load the webpage at `https://programofcomputergraphics.github.io/ProbeWebDemo/`. Refresh the page if the application does not show the geometry.
 
 2) Undistort the imagespace, and reposition the camera such that the distorting/undistorting animation looks reasonable.
 
