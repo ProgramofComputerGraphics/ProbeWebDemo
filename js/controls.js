@@ -1,7 +1,6 @@
 import * as THREE from "three";
 
 import { defaults } from "./defaults.js";
-import { readFile } from "./file.js";
 
 // Object Import/Export Functions
 
@@ -248,6 +247,14 @@ function initTransformResetButton(probeScene) {
     });
 }
 
+function initTransformSetDefaultButton(probeScene) {
+    const transformSetDefaultButton = document.getElementById("transformSetDefaultButton");
+    
+    transformSetDefaultButton.addEventListener("click", () => {
+        probeScene.setObjectDefaultTransform();
+    });
+}
+
 function initTransformWidgetButtons(probeScene, viewManager) {
     const translateButton = document.getElementById("translateButton");
     const rotateButton = document.getElementById("rotateButton");
@@ -469,6 +476,7 @@ export function initControls(probeScene, viewManager, cameraViewIndex) {
 
     // Transform Controls
     initTransformResetButton(probeScene);
+    initTransformSetDefaultButton(probeScene);
     initTransformWidgetButtons(probeScene, viewManager);
     initTransformEntryElements(probeScene);
 

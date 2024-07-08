@@ -633,7 +633,7 @@ export class ProbeScene {
 
             this.#gumball.addEventListener("change", (event) => {
                 const z = object.position.z;
-                if(z < this.#frustum.getNear()) {
+                if(z < -this.#frustum.getNear()) {
                     this.#frustum.setFar(-z);
                     const farElement = document.getElementById("farEntry");
                     farElement.value = -z;
